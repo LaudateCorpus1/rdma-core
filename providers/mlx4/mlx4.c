@@ -49,6 +49,10 @@ int mlx4_cleanup_upon_device_fatal = 0;
 #define PCI_VENDOR_ID_MELLANOX			0x15b3
 #endif
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+int mlx4_trace = 0;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 #define HCA(v, d) VERBS_PCI_MATCH(PCI_VENDOR_ID_##v, d, NULL)
 static const struct verbs_match_ent hca_table[] = {
 	HCA(MELLANOX, 0x6340),	/* MT25408 "Hermon" SDR */
@@ -135,6 +139,10 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 	.open_xrcd = mlx4_open_xrcd,
 	.query_device_ex = mlx4_query_device_ex,
 	.query_rt_values = mlx4_query_rt_values,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.drv_set_legacy_xrc = mlx4_set_legacy_xrc,
+	.drv_get_legacy_xrc = mlx4_get_legacy_xrc,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 static void mlx4_read_env(void)
@@ -144,6 +152,12 @@ static void mlx4_read_env(void)
 	env_value = getenv("MLX4_DEVICE_FATAL_CLEANUP");
 	if (env_value)
 		mlx4_cleanup_upon_device_fatal = (strcmp(env_value, "0")) ? 1 : 0;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	env_value = getenv("MLX4_TRACE");
+	if (env_value && (strcmp(env_value, "0")))
+		mlx4_trace = 1;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 }
 
 static int mlx4_map_internal_clock(struct mlx4_device *mdev,
