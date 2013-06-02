@@ -47,6 +47,10 @@
 #define PCI_VENDOR_ID_MELLANOX			0x15b3
 #endif
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+int mlx4_trace = 0;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 #define HCA(v, d) VERBS_PCI_MATCH(PCI_VENDOR_ID_##v, d, NULL)
 static const struct verbs_match_ent hca_table[] = {
 	HCA(MELLANOX, 0x6340),	/* MT25408 "Hermon" SDR */
@@ -134,7 +138,22 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 	.open_xrcd = mlx4_open_xrcd,
 	.query_device_ex = mlx4_query_device_ex,
 	.query_rt_values = mlx4_query_rt_values,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.drv_set_legacy_xrc = mlx4_set_legacy_xrc,
+	.drv_get_legacy_xrc = mlx4_get_legacy_xrc,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+static void mlx4_read_env(void)
+{
+	char *env_value;
+
+	env_value = getenv("MLX4_TRACE");
+	if (env_value && (strcmp(env_value, "0")))
+		mlx4_trace = 1;
+}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int mlx4_map_internal_clock(struct mlx4_device *mdev,
 				   struct ibv_context *ibv_ctx)
@@ -177,6 +196,10 @@ static struct verbs_context *mlx4_alloc_context(struct ibv_device *ibdev,
 		return NULL;
 
 	verbs_ctx = &context->ibv_ctx;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	mlx4_read_env();
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (dev->abi_version <= MLX4_UVERBS_NO_DEV_CAPS_ABI_VERSION) {
 		if (ibv_cmd_get_context(verbs_ctx, &cmd, sizeof(cmd),
