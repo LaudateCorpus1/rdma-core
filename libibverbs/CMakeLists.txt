@@ -1,6 +1,7 @@
 publish_headers(infiniband
   arch.h
   opcode.h
+  ofa_verbs.h
   sa-kern-abi.h
   sa.h
   verbs.h

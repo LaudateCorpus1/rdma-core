@@ -62,6 +62,10 @@ int ibverbs_init(void);
 void ibverbs_device_put(struct ibv_device *dev);
 void ibverbs_device_hold(struct ibv_device *dev);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn);
+#endif
+
 struct verbs_ex_private {
 	BITMAP_DECLARE(unsupported_ioctls, VERBS_OPS_NUM);
 	uint32_t driver_id;

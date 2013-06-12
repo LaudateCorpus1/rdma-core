@@ -495,6 +495,10 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	destroy_srq,
 	destroy_wq,
 	detach_mcast,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	NULL,	/* drv_get_legacy_xrc: NULL - we need to check presence */
+	NULL,	/* drv_set_legacy_xrc: NULL - we need to check presence */
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	free_dm,
 	get_srq_num,
 	modify_cq,
@@ -615,6 +619,10 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_PRIV_OP(ctx, destroy_srq);
 	SET_OP(vctx, destroy_wq);
 	SET_PRIV_OP(ctx, detach_mcast);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_PRIV_OP_IC(vctx, drv_get_legacy_xrc);
+	SET_PRIV_OP_IC(vctx, drv_set_legacy_xrc);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, free_dm);
 	SET_OP(vctx, get_srq_num);
 	SET_OP(vctx, modify_cq);
