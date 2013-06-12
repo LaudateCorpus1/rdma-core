@@ -44,6 +44,9 @@
 #include <linux/types.h>
 #include <stdint.h>
 #include <infiniband/verbs_api.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+#include <infiniband/ofa_verbs.h>
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #ifdef __cplusplus
 #include <limits>
@@ -829,6 +832,10 @@ enum ibv_qp_type {
 	IBV_QPT_RC = 2,
 	IBV_QPT_UC,
 	IBV_QPT_UD,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/* XRC compatible code */
+	IBV_QPT_XRC,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	IBV_QPT_RAW_PACKET = 8,
 	IBV_QPT_XRC_SEND = 9,
 	IBV_QPT_XRC_RECV,
@@ -851,6 +858,10 @@ struct ibv_qp_init_attr {
 	struct ibv_qp_cap	cap;
 	enum ibv_qp_type	qp_type;
 	int			sq_sig_all;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/* Below is needed for backwards compatabile */
+	struct ibv_xrc_domain  *xrc_domain;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 enum ibv_qp_init_attr_mask {
