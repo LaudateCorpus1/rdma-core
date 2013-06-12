@@ -44,6 +44,9 @@
 #include <linux/types.h>
 #include <stdint.h>
 #include <infiniband/verbs_api.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+#include <infiniband/ofa_verbs.h>
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #ifdef __cplusplus
 #include <limits>
@@ -829,6 +832,10 @@ enum ibv_qp_type {
 	IBV_QPT_RC = 2,
 	IBV_QPT_UC,
 	IBV_QPT_UD,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/* XRC compatible code */
+	IBV_QPT_XRC,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	IBV_QPT_RAW_PACKET = 8,
 	IBV_QPT_XRC_SEND = 9,
 	IBV_QPT_XRC_RECV,
@@ -851,6 +858,10 @@ struct ibv_qp_init_attr {
 	struct ibv_qp_cap	cap;
 	enum ibv_qp_type	qp_type;
 	int			sq_sig_all;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/* Below is needed for backwards compatabile */
+	struct ibv_xrc_domain  *xrc_domain;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 enum ibv_qp_init_attr_mask {
@@ -1836,6 +1847,10 @@ struct verbs_context {
 							  struct ibv_flow_action_esp_attr *attr);
 	int (*modify_qp_rate_limit)(struct ibv_qp *qp,
 				    struct ibv_qp_rate_limit_attr *attr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	void * (*drv_get_legacy_xrc) (struct ibv_srq *ibv_srq);
+	void (*drv_set_legacy_xrc) (struct ibv_srq *ibv_srq, void *legacy_xrc);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct ibv_pd *(*alloc_parent_domain)(struct ibv_context *context,
 					      struct ibv_parent_domain_init_attr *attr);
 	int (*dealloc_td)(struct ibv_td *td);

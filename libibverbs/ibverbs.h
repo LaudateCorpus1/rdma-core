@@ -60,6 +60,10 @@ int ibverbs_init(void);
 void ibverbs_device_put(struct ibv_device *dev);
 void ibverbs_device_hold(struct ibv_device *dev);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn);
+#endif
+
 struct verbs_ex_private {
 	struct ibv_cq_ex *(*create_cq_ex)(struct ibv_context *context,
 					  struct ibv_cq_init_attr_ex *init_attr);

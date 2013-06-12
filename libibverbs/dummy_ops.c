@@ -274,6 +274,19 @@ static int detach_mcast(struct ibv_qp *qp, const union ibv_gid *gid,
 	return ENOSYS;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static void *drv_get_legacy_xrc(struct ibv_srq *srq)
+{
+	return NULL;
+}
+
+static void drv_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq)
+{
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 static int free_dm(struct ibv_dm *dm)
 {
 	return ENOSYS;
@@ -485,6 +498,10 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	destroy_srq,
 	destroy_wq,
 	detach_mcast,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	drv_get_legacy_xrc,
+	drv_set_legacy_xrc,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	free_dm,
 	get_srq_num,
 	modify_cq,
@@ -581,6 +598,10 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, destroy_srq);
 	SET_OP(vctx, destroy_wq);
 	SET_OP(ctx, detach_mcast);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_OP(vctx, drv_get_legacy_xrc);
+	SET_OP(vctx, drv_set_legacy_xrc);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, free_dm);
 	SET_OP(vctx, get_srq_num);
 	SET_OP(vctx, modify_cq);

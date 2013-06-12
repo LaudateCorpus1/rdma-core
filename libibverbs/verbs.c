@@ -40,6 +40,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+#include <search.h>
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 #include <linux/ip.h>
 #include <dirent.h>
 #include <netinet/in.h>
@@ -985,3 +988,342 @@ free_resources:
 	return -ENOSYS;
 #endif
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/* XRC compatibility layer */
+struct ibv_xrc_domain *ibv_open_xrc_domain(struct ibv_context *context,
+					   int fd, int oflag)
+{
+
+	struct ibv_xrcd *ibv_xrcd;
+	struct ibv_xrcd_init_attr xrcd_init_attr;
+
+	memset(&xrcd_init_attr, 0, sizeof(xrcd_init_attr));
+
+	xrcd_init_attr.fd = fd;
+	xrcd_init_attr.oflags = oflag;
+
+	xrcd_init_attr.comp_mask = IBV_XRCD_INIT_ATTR_FD |
+					IBV_XRCD_INIT_ATTR_OFLAGS;
+
+	ibv_xrcd = ibv_open_xrcd(context, &xrcd_init_attr);
+	if (!ibv_xrcd)
+		return NULL;
+
+	/* Caller should relate this returned pointer as an opaque, internally will be used
+	  * as ibv_xrcd pointer.
+	*/
+	return (struct ibv_xrc_domain *)ibv_xrcd;
+
+}
+
+
+struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
+				   struct ibv_xrc_domain *xrc_domain,
+				   struct ibv_cq *xrc_cq,
+				   struct ibv_srq_init_attr *srq_init_attr)
+{
+	struct ibv_srq_init_attr_ex ibv_srq_init_attr_ex;
+	struct ibv_srq_legacy *ibv_srq_legacy;
+	struct ibv_srq *ibv_srq;
+	uint32_t		xrc_srq_num;
+	struct verbs_context *vctx;
+
+	vctx = verbs_get_ctx_op(pd->context, drv_set_legacy_xrc);
+	if (!vctx) {
+		errno = ENOSYS;
+		return NULL;
+	}
+
+	memset(&ibv_srq_init_attr_ex, 0, sizeof ibv_srq_init_attr_ex);
+
+	ibv_srq_init_attr_ex.xrcd = (struct ibv_xrcd *)xrc_domain;
+	ibv_srq_init_attr_ex.comp_mask = IBV_SRQ_INIT_ATTR_XRCD |
+				IBV_SRQ_INIT_ATTR_TYPE |
+				IBV_SRQ_INIT_ATTR_CQ | IBV_SRQ_INIT_ATTR_PD;
+
+	ibv_srq_init_attr_ex.cq = xrc_cq;
+	ibv_srq_init_attr_ex.pd = pd;
+	ibv_srq_init_attr_ex.srq_type = IBV_SRQT_XRC;
+
+	ibv_srq_init_attr_ex.attr.max_sge = srq_init_attr->attr.max_sge;
+	ibv_srq_init_attr_ex.attr.max_wr = srq_init_attr->attr.max_wr;
+	ibv_srq_init_attr_ex.attr.srq_limit = srq_init_attr->attr.srq_limit;
+	ibv_srq_init_attr_ex.srq_context = srq_init_attr->srq_context;
+
+	ibv_srq = ibv_create_srq_ex(pd->context, &ibv_srq_init_attr_ex);
+	if (!ibv_srq)
+		return NULL;
+
+	/* handle value LEGACY_XRC_SRQ_HANDLE should be reserved, in case got it
+	  * allocating other one, than free it to in order to get a new handle.
+	*/
+	if (ibv_srq->handle == LEGACY_XRC_SRQ_HANDLE) {
+
+		struct ibv_srq *ibv_srq_tmp = ibv_srq;
+		int ret;
+
+		ibv_srq = ibv_create_srq_ex(pd->context, &ibv_srq_init_attr_ex);
+		/* now  destroying previous one */
+		ret = ibv_destroy_srq(ibv_srq_tmp);
+		if (ret) {
+			fprintf(stderr, PFX "ibv_create_xrc_srq, fail to destroy intermediate srq\n");
+			return NULL;
+		}
+
+		if (!ibv_srq)
+			return NULL;
+
+		/* still get this value - set an error */
+		if (ibv_srq->handle == LEGACY_XRC_SRQ_HANDLE) {
+			ret = ibv_destroy_srq(ibv_srq);
+			if (ret)
+				fprintf(stderr, PFX "ibv_create_xrc_srq, fail to destroy intermediate srq\n");
+			errno = EAGAIN;
+			return NULL;
+		}
+	}
+
+	ibv_srq_legacy = calloc(1, sizeof(*ibv_srq_legacy));
+	if (!ibv_srq_legacy) {
+		errno = ENOMEM;
+		goto err;
+	}
+
+	if (ibv_get_srq_num(ibv_srq, &xrc_srq_num))
+		goto err_free;
+
+	ibv_srq_legacy->ibv_srq = ibv_srq;
+	ibv_srq_legacy->xrc_srq_num = xrc_srq_num;
+
+	/* setting the bin compat fields */
+	ibv_srq_legacy->xrc_srq_num_bin_compat = xrc_srq_num;
+	ibv_srq_legacy->xrc_domain_bin_compat = xrc_domain;
+	ibv_srq_legacy->xrc_cq_bin_compat = xrc_cq;
+	ibv_srq_legacy->context          = pd->context;
+	ibv_srq_legacy->srq_context      = srq_init_attr->srq_context;
+	ibv_srq_legacy->pd               = pd;
+	/* Set an indication that this is a legacy structure.
+	  * In all cases that we have this indication should use internal ibv_srq having real handle and fields.
+	  *
+	*/
+	ibv_srq_legacy->handle	   = LEGACY_XRC_SRQ_HANDLE;
+	ibv_srq_legacy->xrc_domain       = xrc_domain;
+	ibv_srq_legacy->xrc_cq           = xrc_cq;
+	/* mutex & cond are not set on legacy_ibv_srq, internal ones are used.
+	  * We don't expect application to use them.
+	  */
+	ibv_srq_legacy->events_completed = 0;
+
+	vctx->drv_set_legacy_xrc(ibv_srq, ibv_srq_legacy);
+	return (struct ibv_srq *)(ibv_srq_legacy);
+
+err_free:
+	free(ibv_srq_legacy);
+err:
+	ibv_destroy_srq(ibv_srq);
+	return NULL;
+}
+
+static pthread_mutex_t xrc_tree_mutex = PTHREAD_MUTEX_INITIALIZER;
+static void *ibv_xrc_qp_tree;
+
+static int xrc_qp_compare(const void *a, const void *b)
+{
+
+	if ((*(uint32_t *) a) < (*(uint32_t *) b))
+	       return -1;
+	else if ((*(uint32_t *) a) > (*(uint32_t *) b))
+	       return 1;
+	else
+	       return 0;
+
+}
+
+struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn)
+{
+	uint32_t **qpn_ptr;
+	struct ibv_qp *ibv_qp = NULL;
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tfind(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		goto end;
+
+	ibv_qp = container_of(*qpn_ptr, struct ibv_qp, qp_num);
+
+end:
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ibv_qp;
+}
+
+static int ibv_clear_xrc_qp(uint32_t qpn)
+{
+	uint32_t **qpn_ptr;
+	int ret = 0;
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tdelete(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		ret = EINVAL;
+
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ret;
+}
+
+static int ibv_store_xrc_qp(struct ibv_qp *qp)
+{
+	uint32_t **qpn_ptr;
+	int ret = 0;
+
+	if (ibv_find_xrc_qp(qp->qp_num)) {
+		/* set an error in case qpn alreday exists, not expected to happen */
+		fprintf(stderr, PFX "ibv_store_xrc_qp failed, qpn=%u is already stored\n",
+				qp->qp_num);
+		return EEXIST;
+	}
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tsearch(&qp->qp_num, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		ret = EINVAL;
+
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ret;
+
+}
+
+int ibv_close_xrc_domain(struct ibv_xrc_domain *d)
+{
+	struct ibv_xrcd *ibv_xrcd = (struct ibv_xrcd *)d;
+
+	return ibv_close_xrcd(ibv_xrcd);
+}
+
+int ibv_create_xrc_rcv_qp(struct ibv_qp_init_attr *init_attr,
+			  uint32_t *xrc_rcv_qpn)
+{
+	struct ibv_xrcd *ibv_xrcd;
+	struct ibv_qp_init_attr_ex qp_init_attr_ex;
+	struct ibv_qp *ibv_qp;
+	int ret;
+
+	if (!init_attr || !(init_attr->xrc_domain))
+		return EINVAL;
+
+	ibv_xrcd = (struct ibv_xrcd *) init_attr->xrc_domain;
+	memset(&qp_init_attr_ex, 0, sizeof(qp_init_attr_ex));
+	qp_init_attr_ex.qp_type = IBV_QPT_XRC_RECV;
+	qp_init_attr_ex.comp_mask = IBV_QP_INIT_ATTR_XRCD;
+	qp_init_attr_ex.xrcd = ibv_xrcd;
+
+	ibv_qp = ibv_create_qp_ex(ibv_xrcd->context, &qp_init_attr_ex);
+	if (!ibv_qp)
+		return errno;
+
+	/* We should return xrc_rcv_qpn and manage the handle */
+	*xrc_rcv_qpn = ibv_qp->qp_num;
+	ret = ibv_store_xrc_qp(ibv_qp);
+	if (ret) {
+		int err;
+
+		err = ibv_destroy_qp(ibv_qp);
+		if (err)
+			fprintf(stderr, PFX "ibv_create_xrc_rcv_qp, ibv_destroy_qp failed, err=%d\n", err);
+		return ret;
+	}
+
+	return 0;
+}
+
+
+int ibv_modify_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
+			  uint32_t xrc_qp_num,
+			  struct ibv_qp_attr *attr, int attr_mask)
+{
+	struct ibv_qp *qp;
+
+	qp = ibv_find_xrc_qp(xrc_qp_num);
+	if (!qp)
+		return EINVAL;
+
+	/* no use of xrc doamin */
+	return ibv_modify_qp(qp, attr, attr_mask);
+
+}
+
+int ibv_query_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num,
+			 struct ibv_qp_attr *attr, int attr_mask,
+			 struct ibv_qp_init_attr *init_attr)
+{
+	struct ibv_qp *qp;
+
+	qp = ibv_find_xrc_qp(xrc_qp_num);
+	if (!qp)
+		return EINVAL;
+
+	/* no use of xrc doamin */
+	return ibv_query_qp(qp, attr, attr_mask, init_attr);
+
+}
+int ibv_reg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num)
+{
+
+	struct ibv_qp *qp;
+	struct ibv_qp_open_attr attr;
+	struct ibv_xrcd *ibv_xrcd = (struct ibv_xrcd *)xrc_domain;
+	int ret;
+
+	memset(&attr, '\0', sizeof(attr));
+
+	attr.qp_num = xrc_qp_num;
+	attr.qp_type = IBV_QPT_XRC_RECV;
+	attr.xrcd = ibv_xrcd;
+	attr.comp_mask = IBV_QP_OPEN_ATTR_XRCD | IBV_QP_OPEN_ATTR_NUM |
+			IBV_QP_OPEN_ATTR_TYPE;
+
+	qp = ibv_open_qp(ibv_xrcd->context, &attr);
+	if (!qp)
+		return errno;
+	/* xrc_qp_num should be equal to qp->qp_num - same kernel qp.
+	  * This API expects to be called from other process comparing the creator one
+	  * No mapping between same qpn to more that 1 ibv_qp pointer.
+	*/
+	ret = ibv_store_xrc_qp(qp);
+	if (ret) {
+		int err;
+		err = ibv_destroy_qp(qp);
+		if (err)
+			fprintf(stderr, PFX "ibv_reg_xrc_rcv_qp, ibv_destroy_qp failed, err=%d\n", err);
+
+		return ret;
+	}
+
+	return 0;
+
+}
+
+int ibv_unreg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
+			 uint32_t xrc_qp_num)
+{
+
+	struct ibv_qp *qp;
+	int ret;
+
+	qp = ibv_find_xrc_qp(xrc_qp_num);
+	if (!qp)
+		return EINVAL;
+
+	ret = ibv_clear_xrc_qp(xrc_qp_num);
+	if (ret) {
+		fprintf(stderr, PFX "ibv_unreg_xrc_rcv_qp, fail via clear, qpn=%u, err=%d\n",
+			xrc_qp_num, ret);
+		return ret;
+	}
+
+	return ibv_destroy_qp(qp);
+
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */

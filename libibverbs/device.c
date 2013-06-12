@@ -341,6 +341,11 @@ LATEST_SYMVER_FUNC(ibv_get_async_event, 1_1, "IBVERBS_1.1",
 		   struct ibv_async_event *event)
 {
 	struct ib_uverbs_async_event_desc ev;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_qp *qp;
+	struct verbs_context *vctx;
+	struct ibv_srq_legacy *ibv_srq_legacy = NULL;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (read(context->async_fd, &ev, sizeof ev) != sizeof ev)
 		return -1;
@@ -361,11 +366,37 @@ LATEST_SYMVER_FUNC(ibv_get_async_event, 1_1, "IBVERBS_1.1",
 	case IBV_EVENT_PATH_MIG_ERR:
 	case IBV_EVENT_QP_LAST_WQE_REACHED:
 		event->element.qp = (void *) (uintptr_t) ev.element;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+		qp = ibv_find_xrc_qp(event->element.qp->qp_num);
+		if (qp) {
+			/* This is XRC reciever QP created by the legacy API */
+			event->event_type |= IBV_XRC_QP_EVENT_FLAG;
+			event->element.qp = NULL;
+			event->element.xrc_qp_num = qp->qp_num;
+		}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 		break;
 
 	case IBV_EVENT_SRQ_ERR:
 	case IBV_EVENT_SRQ_LIMIT_REACHED:
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+		vctx = verbs_get_ctx_op(context, drv_get_legacy_xrc);
+		if (vctx)
+			/* ev.elemant is ibv_srq comes from the kernel, in case there is leagcy one
+			 * it should be returned instead.
+			 */
+			ibv_srq_legacy = vctx->drv_get_legacy_xrc((void *) (uintptr_t) ev.element);
+
+		event->element.srq = (ibv_srq_legacy) ? (void *)ibv_srq_legacy :
+						(void *) (uintptr_t) ev.element;
+
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+
 		event->element.srq = (void *) (uintptr_t) ev.element;
+
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
+
 		break;
 
 	case IBV_EVENT_WQ_FATAL:
@@ -385,6 +416,15 @@ LATEST_SYMVER_FUNC(ibv_ack_async_event, 1_1, "IBVERBS_1.1",
 		   void,
 		   struct ibv_async_event *event)
 {
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	int is_legacy_xrc = 0;
+
+	if (event->event_type & IBV_XRC_QP_EVENT_FLAG) {
+		event->event_type ^= IBV_XRC_QP_EVENT_FLAG;
+		is_legacy_xrc = 1;
+	}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	switch (event->event_type) {
 	case IBV_EVENT_CQ_ERR:
 	{
@@ -409,6 +449,21 @@ LATEST_SYMVER_FUNC(ibv_ack_async_event, 1_1, "IBVERBS_1.1",
 	{
 		struct ibv_qp *qp = event->element.qp;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+		if (is_legacy_xrc) {
+		/* Looking for ibv_qp for this XRC reciever QPN */
+			qp = ibv_find_xrc_qp(event->element.xrc_qp_num);
+			/* Even if found a qp making sure that it matches, would like
+			* to prevent rare case while pointer value was matched to qp number.
+			*/
+			if (!qp || qp->qp_num != event->element.xrc_qp_num) {
+				fprintf(stderr, PFX "Warning: ibv_ack_async_event, XRC qpn=%u wasn't found\n",
+					event->element.xrc_qp_num);
+				return;
+			}
+		}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 		pthread_mutex_lock(&qp->mutex);
 		++qp->events_completed;
 		pthread_cond_signal(&qp->cond);
@@ -422,6 +477,15 @@ LATEST_SYMVER_FUNC(ibv_ack_async_event, 1_1, "IBVERBS_1.1",
 	{
 		struct ibv_srq *srq = event->element.srq;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+		if (srq->handle == LEGACY_XRC_SRQ_HANDLE) {
+			struct ibv_srq_legacy *ibv_srq_legacy =
+					(struct ibv_srq_legacy *) srq;
+			srq = ibv_srq_legacy->ibv_srq;
+		}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
+		/* We should use here the internal mutx/cond even in legacy mode */
 		pthread_mutex_lock(&srq->mutex);
 		++srq->events_completed;
 		pthread_cond_signal(&srq->cond);
