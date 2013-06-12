@@ -10,6 +10,12 @@ struct ibv_qp_init_attr;
 struct ibv_qp_attr;
 
 
+#ifdef __GNUC__
+#define DEPRECATED  __attribute__((deprecated))
+#else
+#define DEPRECATED
+#endif
+
 /* XRC compatibility layer */
 #define LEGACY_XRC_SRQ_HANDLE 0xffffffff
 
@@ -67,7 +73,7 @@ struct ibv_srq_legacy {
  *     processes executing open with fd naming the same inode.
  */
 struct ibv_xrc_domain *ibv_open_xrc_domain(struct ibv_context *context,
-					   int fd, int oflag);
+					   int fd, int oflag) DEPRECATED;
 
 /**
  * ibv_create_xrc_srq - Creates a SRQ associated with the specified protection
@@ -120,7 +126,7 @@ int ibv_close_xrc_domain(struct ibv_xrc_domain *d);
  *	 conditions. The creating process will need to call ibv_unreg_xrc_qp()
  *	 for the QP to release it from this process.
  */
-int ibv_create_xrc_rcv_qp(struct ibv_qp_init_attr *init_attr, uint32_t *xrc_rcv_qpn);
+int ibv_create_xrc_rcv_qp(struct ibv_qp_init_attr *init_attr, uint32_t *xrc_rcv_qpn) DEPRECATED;
 
 /**
  * ibv_modify_xrc_rcv_qp - modifies an xrc_rcv qp.
@@ -163,7 +169,7 @@ int ibv_modify_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
  */
 int ibv_query_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num,
 			 struct ibv_qp_attr *attr, int attr_mask,
-			 struct ibv_qp_init_attr *init_attr);
+			 struct ibv_qp_init_attr *init_attr) DEPRECATED;
 
 /**
  * ibv_reg_xrc_rcv_qp: registers a user process with an XRC QP which serves as
@@ -179,7 +185,7 @@ int ibv_query_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num,
  *		3. The XRC QP does not belong to the given domain.
  */
 int ibv_reg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
-				uint32_t xrc_qp_num);
+				uint32_t xrc_qp_num) DEPRECATED;
 
 /**
  * ibv_unreg_xrc_rcv_qp: detaches a user process from an XRC QP serving as
