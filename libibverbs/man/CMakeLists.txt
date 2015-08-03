@@ -69,6 +69,7 @@ rdma_man_pages(
   ibv_alloc_shpd.3
   ibv_share_pd.3
   ibv_shpd_pingpong.1
+  ibv_reg_mr_relaxed.3
   )
 rdma_alias_man_pages(
   ibv_alloc_dm.3 ibv_free_dm.3

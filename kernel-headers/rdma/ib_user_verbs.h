@@ -88,6 +88,9 @@ enum {
 	IB_USER_VERBS_CMD_CLOSE_XRCD,
 	IB_USER_VERBS_CMD_CREATE_XSRQ,
 	IB_USER_VERBS_CMD_OPEN_QP,
+	IB_USER_VERBS_CMD_REG_MR_RELAXED   = 43,
+	IB_USER_VERBS_CMD_DEREG_MR_RELAXED = 44,
+	IB_USER_VERBS_CMD_FLUSH_RELAXED_MR = 45,
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	/*
 	 * Note: 0-40 verbs defined above
@@ -358,6 +361,13 @@ struct ib_uverbs_share_pd {
 
 struct ib_uverbs_share_pd_resp {
 	__u32 pd_handle;
+};
+
+struct ib_uverbs_flush_relaxed_mr {
+  __u32 command;
+  __u16 in_words;
+  __u16 out_words;
+  __u32 pd_handle;
 };
 
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */

@@ -253,6 +253,9 @@ struct verbs_context_ops {
 	int (*dealloc_pd)(struct ibv_pd *pd);
 	int (*dealloc_td)(struct ibv_td *td);
 	int (*dereg_mr)(struct ibv_mr *mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	int (*dereg_mr_relaxed)(struct ibv_mr *mr);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	int (*destroy_ah)(struct ibv_ah *ah);
 	int (*destroy_counters)(struct ibv_counters *counters);
 	int (*destroy_cq)(struct ibv_cq *cq);
@@ -267,6 +270,7 @@ struct verbs_context_ops {
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	void * (*drv_get_legacy_xrc) (struct ibv_srq *ibv_srq);
 	void (*drv_set_legacy_xrc) (struct ibv_srq *ibv_srq, void *legacy_xrc);
+	int (*flush_relaxed_mr)(struct ibv_pd *pd);
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	int (*free_dm)(struct ibv_dm *dm);
 	int (*get_srq_num)(struct ibv_srq *srq, uint32_t *srq_num);
@@ -316,6 +320,10 @@ struct verbs_context_ops {
 				    unsigned int access);
 	struct ibv_mr *(*reg_mr)(struct ibv_pd *pd, void *addr, size_t length,
 				 int access);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_mr *(*reg_mr_relaxed)(struct ibv_pd *pd, void *addr, size_t length,
+					 int access);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	int (*req_notify_cq)(struct ibv_cq *cq, int solicited_only);
 	int (*rereg_mr)(struct ibv_mr *mr, int flags, struct ibv_pd *pd,
 			void *addr, size_t length, int access);
@@ -441,6 +449,16 @@ int ibv_cmd_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type,
 		     struct ib_uverbs_alloc_mw_resp *resp, size_t resp_size);
 int ibv_cmd_dealloc_mw(struct ibv_mw *mw,
 		       struct ibv_dealloc_mw *cmd, size_t cmd_size);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+#define IBV_CMD_REG_MR_RELAXED_HAS_RESP_PARAMS
+int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
+			   uint64_t hca_va, int access,
+			   struct ibv_mr *mr, struct ibv_reg_mr *cmd,
+			   size_t cmd_size,
+			   struct ib_uverbs_reg_mr_resp *resp, size_t resp_size);
+int ibv_cmd_dereg_mr_relaxed(struct ibv_mr *mr);
+int ibv_cmd_flush_relaxed_mr(struct ibv_pd *pd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 int ibv_cmd_create_cq(struct ibv_context *context, int cqe,
 		      struct ibv_comp_channel *channel,
 		      int comp_vector, struct ibv_cq *cq,

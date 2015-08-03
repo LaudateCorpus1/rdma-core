@@ -273,6 +273,32 @@ LATEST_SYMVER_FUNC(ibv_reg_mr, 1_1, "IBVERBS_1.1",
 	return mr;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+LATEST_SYMVER_FUNC(ibv_reg_mr_relaxed, 1_1, "IBVERBS_1.1",
+		   struct ibv_mr *,
+		   struct ibv_pd *pd, void *addr,
+		   size_t length, int access)
+{
+	struct ibv_mr *mr;
+
+	if (ibv_dontfork_range(addr, length))
+		return NULL;
+
+	mr = pd->context->ops.reg_mr_relaxed(pd, addr, length, access);
+	if (mr) {
+		mr->context = pd->context;
+		mr->pd      = pd;
+		mr->addr    = addr;
+		mr->length  = length;
+	} else
+		ibv_dofork_range(addr, length);
+
+	return mr;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 LATEST_SYMVER_FUNC(ibv_rereg_mr, 1_1, "IBVERBS_1.1",
 		   int,
 		   struct ibv_mr *mr, int flags,
@@ -345,6 +371,32 @@ LATEST_SYMVER_FUNC(ibv_dereg_mr, 1_1, "IBVERBS_1.1",
 
 	return ret;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+LATEST_SYMVER_FUNC(ibv_dereg_mr_relaxed, 1_1, "IBVERBS_1.1",
+		   int,
+		   struct ibv_mr *mr)
+{
+	int ret;
+	void *addr      = mr->addr;
+	size_t length   = mr->length;
+
+	ret = mr->context->ops.dereg_mr_relaxed(mr);
+	if (!ret)
+		ibv_dofork_range(addr, length);
+
+	return ret;
+}
+
+LATEST_SYMVER_FUNC(ibv_flush_relaxed_mr, 1_1, "IBVERBS_1.1",
+		   int,
+		   struct ibv_pd *pd)
+{
+	return pd->context->ops.flush_relaxed_mr(pd);
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_comp_channel *ibv_create_comp_channel(struct ibv_context *context)
 {

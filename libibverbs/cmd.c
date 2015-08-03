@@ -490,6 +490,38 @@ int ibv_cmd_rereg_mr(struct ibv_mr *mr, uint32_t flags, void *addr,
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
+                   uint64_t hca_va, int access,
+                   struct ibv_mr *mr, struct ibv_reg_mr *cmd,
+                   size_t cmd_size,
+                   struct ib_uverbs_reg_mr_resp *resp, size_t resp_size)
+{
+
+        IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR_RELAXED, resp, resp_size);
+
+        cmd->start        = (uintptr_t) addr;
+        cmd->length       = length;
+        cmd->hca_va       = hca_va;
+        cmd->pd_handle    = pd->handle;
+        cmd->access_flags = access;
+
+        if (write(pd->context->cmd_fd, cmd, cmd_size) != cmd_size)
+                return errno;
+
+        (void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
+
+        mr->handle  = resp->mr_handle;
+        mr->lkey    = resp->lkey;
+        mr->rkey    = resp->rkey;
+        mr->context = pd->context;
+
+        return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_dereg_mr(struct ibv_mr *mr)
 {
 	struct ibv_dereg_mr cmd;
@@ -527,6 +559,23 @@ int ibv_cmd_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type,
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+int ibv_cmd_dereg_mr_relaxed(struct ibv_mr *mr)
+{
+        struct ibv_dereg_mr cmd;
+
+        IBV_INIT_CMD(&cmd, sizeof cmd, DEREG_MR_RELAXED);
+        cmd.mr_handle = mr->handle;
+
+        if (write(mr->context->cmd_fd, &cmd, sizeof cmd) != sizeof cmd)
+                return errno;
+
+        return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_dealloc_mw(struct ibv_mw *mw,
 		       struct ibv_dealloc_mw *cmd, size_t cmd_size)
 {
@@ -538,6 +587,23 @@ int ibv_cmd_dealloc_mw(struct ibv_mw *mw,
 
 	return 0;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+int ibv_cmd_flush_relaxed_mr(struct ibv_pd *pd)
+{
+        struct ibv_flush_relaxed_mr cmd;
+
+        IBV_INIT_CMD(&cmd, sizeof cmd, FLUSH_RELAXED_MR);
+        cmd.pd_handle = pd->handle;
+
+        if (write(pd->context->cmd_fd, &cmd, sizeof cmd) != sizeof cmd)
+                return errno;
+
+        return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 int ibv_cmd_poll_cq(struct ibv_cq *ibcq, int ne, struct ibv_wc *wc)
 {
