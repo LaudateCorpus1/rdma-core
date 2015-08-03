@@ -338,6 +338,41 @@ struct ibv_mr *mlx4_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 	return &vmr->ibv_mr;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
+			   int access)
+{
+	struct verbs_mr *vmr;
+	struct ibv_reg_mr cmd;
+	int ret;
+
+	vmr = malloc(sizeof *vmr);
+	if (!vmr)
+		return NULL;
+
+#ifdef IBV_CMD_REG_MR_RELAXED_HAS_RESP_PARAMS
+	{
+		struct ib_uverbs_reg_mr_resp resp;
+
+		ret = ibv_cmd_reg_mr_relaxed(pd, addr, length, (uintptr_t) addr,
+				     access, vmr, &cmd, sizeof cmd,
+				     &resp, sizeof resp);
+	}
+#else
+	ret = ibv_cmd_reg_mr_relaxed(pd, addr, length, (uintptr_t) addr, access, vmr,
+			     &cmd, sizeof cmd);
+#endif
+	if (ret) {
+		free(vmr);
+		return NULL;
+	}
+
+	return &vmr->ibv_mr;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int mlx4_rereg_mr(struct verbs_mr *vmr,
 		  int flags,
 		  struct ibv_pd *pd, void *addr,
@@ -367,6 +402,33 @@ int mlx4_dereg_mr(struct verbs_mr *vmr)
 	free(vmr);
 	return 0;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+int mlx4_dereg_mr_relaxed(struct verbs_mr *vmr)
+{
+	int ret;
+
+	ret = ibv_cmd_dereg_mr_relaxed(vmr);
+	if (ret)
+		return ret;
+
+	free(vmr);
+	return 0;
+}
+
+int mlx4_flush_relaxed_mr(struct ibv_pd *pd)
+{
+	int ret;
+
+	ret = ibv_cmd_flush_relaxed_mr(pd);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_mw *mlx4_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type)
 {
