@@ -337,9 +337,17 @@ int mlx4_close_xrcd(struct ibv_xrcd *xrcd);
 
 struct ibv_mr *mlx4_reg_mr(struct ibv_pd *pd, void *addr,
 			    size_t length, int access);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
+				   size_t length, int access);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 int mlx4_rereg_mr(struct ibv_mr *mr, int flags, struct ibv_pd *pd,
 		  void *addr, size_t length, int access);
 int mlx4_dereg_mr(struct ibv_mr *mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+int mlx4_dereg_mr_relaxed(struct ibv_mr *mr);
+int mlx4_flush_relaxed_mr(struct ibv_pd *pd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_mw *mlx4_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type);
 int mlx4_dealloc_mw(struct ibv_mw *mw);
