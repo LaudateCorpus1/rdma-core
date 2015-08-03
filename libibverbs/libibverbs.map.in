@@ -17,7 +17,10 @@ IBVERBS_1.0 {
 		ibv_alloc_pd;
 		ibv_dealloc_pd;
 		ibv_reg_mr;
+		ibv_reg_mr_relaxed;
 		ibv_dereg_mr;
+		ibv_dereg_mr_relaxed;
+		ibv_flush_relaxed_mr;
 		ibv_create_comp_channel;
 		ibv_destroy_comp_channel;
 		ibv_create_cq;
@@ -145,6 +148,7 @@ IBVERBS_PRIVATE_@IBVERBS_PABI_VERSION@ {
 		ibv_cmd_dealloc_mw;
 		ibv_cmd_dealloc_pd;
 		ibv_cmd_dereg_mr;
+		ibv_cmd_dereg_mr_relaxed;
 		ibv_cmd_destroy_ah;
 		ibv_cmd_destroy_counters;
 		ibv_cmd_destroy_cq;
@@ -155,6 +159,7 @@ IBVERBS_PRIVATE_@IBVERBS_PABI_VERSION@ {
 		ibv_cmd_destroy_srq;
 		ibv_cmd_destroy_wq;
 		ibv_cmd_detach_mcast;
+		ibv_cmd_flush_relaxed_mr;
 		ibv_cmd_free_dm;
 		ibv_cmd_get_context;
 		ibv_cmd_modify_flow_action_esp;
@@ -176,6 +181,7 @@ IBVERBS_PRIVATE_@IBVERBS_PABI_VERSION@ {
 		ibv_cmd_read_counters;
 		ibv_cmd_reg_dm_mr;
 		ibv_cmd_reg_mr;
+		ibv_cmd_reg_mr_relaxed;
 		ibv_cmd_req_notify_cq;
 		ibv_cmd_rereg_mr;
 		ibv_cmd_resize_cq;

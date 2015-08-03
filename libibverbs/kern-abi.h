@@ -194,6 +194,9 @@ DECLARE_CMD(IB_USER_VERBS_CMD_DESTROY_CQ, ibv_destroy_cq, ib_uverbs_destroy_cq);
 DECLARE_CMD(IB_USER_VERBS_CMD_DESTROY_QP, ibv_destroy_qp, ib_uverbs_destroy_qp);
 DECLARE_CMD(IB_USER_VERBS_CMD_DESTROY_SRQ, ibv_destroy_srq, ib_uverbs_destroy_srq);
 DECLARE_CMDX(IB_USER_VERBS_CMD_DETACH_MCAST, ibv_detach_mcast, ib_uverbs_detach_mcast, empty);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+DECLARE_CMDX(IB_USER_VERBS_CMD_FLUSH_RELAXED_MR, ibv_flush_relaxed_mr, ib_uverbs_flush_relaxed_mr, empty);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 DECLARE_CMD(IB_USER_VERBS_CMD_GET_CONTEXT, ibv_get_context, ib_uverbs_get_context);
 DECLARE_CMD(IB_USER_VERBS_CMD_MODIFY_QP, ibv_modify_qp, ib_uverbs_modify_qp);
 DECLARE_CMDX(IB_USER_VERBS_CMD_MODIFY_SRQ, ibv_modify_srq, ib_uverbs_modify_srq, empty);

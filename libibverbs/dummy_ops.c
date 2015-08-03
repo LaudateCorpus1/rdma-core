@@ -229,6 +229,15 @@ static int dereg_mr(struct verbs_mr *vmr)
 	return ENOSYS;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static int dereg_mr_relaxed(struct verbs_mr *vmr)
+{
+	return ENOSYS;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 static int destroy_ah(struct ibv_ah *ah)
 {
 	return ENOSYS;
@@ -279,6 +288,15 @@ static int detach_mcast(struct ibv_qp *qp, const union ibv_gid *gid,
 {
 	return ENOSYS;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static int flush_relaxed_mr(struct ibv_pd *pd)
+{
+	return ENOSYS;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int free_dm(struct ibv_dm *dm)
 {
@@ -425,6 +443,17 @@ static struct ibv_mr *reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 	return NULL;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static struct ibv_mr *reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
+				     int access)
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 static int req_notify_cq(struct ibv_cq *cq, int solicited_only)
 {
 	return ENOSYS;
@@ -485,6 +514,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	dealloc_pd,
 	dealloc_td,
 	dereg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	dereg_mr_relaxed,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	destroy_ah,
 	destroy_counters,
 	destroy_cq,
@@ -498,6 +530,7 @@ const struct verbs_context_ops verbs_dummy_ops = {
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	NULL,	/* drv_get_legacy_xrc: NULL - we need to check presence */
 	NULL,	/* drv_set_legacy_xrc: NULL - we need to check presence */
+	flush_relaxed_mr,
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	free_dm,
 	get_srq_num,
@@ -523,6 +556,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	read_counters,
 	reg_dm_mr,
 	reg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	reg_mr_relaxed,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	req_notify_cq,
 	rereg_mr,
 	resize_cq,
@@ -608,6 +644,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, dealloc_mw);
 	SET_PRIV_OP(ctx, dealloc_pd);
 	SET_OP(vctx, dealloc_td);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_PRIV_OP_IC(ctx, dereg_mr_relaxed);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, destroy_counters);
 	SET_PRIV_OP(ctx, dereg_mr);
 	SET_PRIV_OP(ctx, destroy_ah);
@@ -622,6 +661,7 @@ void verbs_set_ops(struct verbs_context *vctx,
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	SET_PRIV_OP_IC(vctx, drv_get_legacy_xrc);
 	SET_PRIV_OP_IC(vctx, drv_set_legacy_xrc);
+	SET_PRIV_OP_IC(ctx, flush_relaxed_mr);
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, free_dm);
 	SET_OP(vctx, get_srq_num);
@@ -647,6 +687,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_PRIV_OP(ctx, query_srq);
 	SET_OP(vctx, reg_dm_mr);
 	SET_PRIV_OP(ctx, reg_mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_PRIV_OP_IC(ctx, reg_mr_relaxed);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(ctx, req_notify_cq);
 	SET_PRIV_OP(ctx, rereg_mr);
 	SET_PRIV_OP(ctx, resize_cq);
