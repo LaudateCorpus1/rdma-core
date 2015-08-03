@@ -482,7 +482,7 @@ static int pp_close_ctx(struct pingpong_context *ctx)
 		char *buf1 = ctx->rbuf;
 		char *buf2 = ctx->rbuf + 2 * ctx->size;
 		for (i = 0 ; i < ctx->size * 2; i++) {
-			if (buf1[i] != (0x7b + is_server) ) {
+			if (buf1[i] != (0x7b + is_server)) {
 				fprintf(stderr, "Data corruption  at %d - %x\n", i, buf1[i]);
 				break;
 			}

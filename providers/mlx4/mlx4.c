@@ -94,8 +94,15 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 	.share_pd      = mlx4_share_pd,
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	.reg_mr	       = mlx4_reg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.reg_mr_relaxed = mlx4_reg_mr_relaxed,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	.rereg_mr      = mlx4_rereg_mr,
 	.dereg_mr      = mlx4_dereg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.dereg_mr_relaxed = mlx4_dereg_mr_relaxed,
+	.flush_relaxed_mr = mlx4_flush_relaxed_mr,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	.alloc_mw      = mlx4_alloc_mw,
 	.dealloc_mw    = mlx4_dealloc_mw,
 	.bind_mw       = mlx4_bind_mw,
