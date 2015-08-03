@@ -2166,10 +2166,35 @@ enum ibv_rereg_mr_err_code {
 int ibv_rereg_mr(struct ibv_mr *mr, int flags,
 		 struct ibv_pd *pd, void *addr,
 		 size_t length, int access);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/**
+ * ibv_reg_mr_relaxed - Register a memory region
+ */
+struct ibv_mr *ibv_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
+				  size_t length, int access);
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 /**
  * ibv_dereg_mr - Deregister a memory region
  */
 int ibv_dereg_mr(struct ibv_mr *mr);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/**
+ * ibv_dereg_mr_relaxed - Deregister a memory region
+ */
+int ibv_dereg_mr_relaxed(struct ibv_mr *mr);
+
+/**
+ * ibv_flush_relaxed_mr - Flush all free mr's in the protection domain
+ */
+int ibv_flush_relaxed_mr(struct ibv_pd *pd);
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 /**
  * ibv_alloc_mw - Allocate a memory window
