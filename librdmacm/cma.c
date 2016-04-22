@@ -554,6 +554,86 @@ err:	ucma_free_id(id_priv);
 	return ret;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/*
+ * Definitions for the private handshake between librdmacm and
+ * UEK2 XRC transport applications.
+ *
+ * (This is used to implement binary compatibility to Oracle
+ * UEK2 librdmacm XRC applications as some  XRC related interfaces
+ * have evolved in ways that necessitate some special code for
+ * achieving binary compatibility.
+ *
+ */
+
+#define ORCL_UEK2_CTX_XRC_RECV            0x3U
+#define ORCL_UEK2_CTX_XRC_SEND            0x2U
+
+#define ORCL_UEK2_CTX_FIRSTBITFLD_MASK    0x7U
+
+typedef struct orcl_uek2_ctx_s {
+	union {
+#if defined(_LP64) || defined(__LP64__)
+		/* LP64 */
+		struct {
+			uint64_t val_firstbitfield: 3;
+			uint64_t val_rest:61;
+		} s;
+		uint64_t val_ctx;
+#else
+		/* else assume ILP32 */
+		struct {
+			uint32_t val_firstbitfield: 3;
+			uint32_t val_rest:29;
+		} s;
+		uint32_t val_ctx;
+#endif
+	} v;
+} orcl_uek2_ctx_t;
+
+/*
+ * We need to override above 'qp_type' setting and the 'ps' passed
+ * in some cases.
+ *
+ * Oracle UEK2 XRC API usage requires special code and private
+ * handshake (using env variable) to be able to distinguish an XRC
+ * send and receive side qp (details below).
+ *
+ * In  this upstream version librdmacm, XRC (SEND* and RECV) cmids
+ * can be created only with PS_IB. However, rdma_create_id()
+ * doesn’t provide a way to create XRC cmid (can’t discriminate
+ * between XRC_SEND/RECV) while creating cmid(s).
+ *
+ * This is a gap in librdmacm XRC support. Oracle UEK2 compatible
+ * app sets the env variable “ORCL_UEK2_XRC_COMPAT_MODE” and has
+ * hints to discriminate between XRC_SEND and XRC_RECV through ‘context’
+ * which we use to implement binary compatibility to UEK2 XRC library
+ * apps.
+ */
+static void rdma_process_oracle_uek2_ctx(void *context, enum rdma_port_space *ps,
+				         enum ibv_qp_type *qp_type)
+{
+	orcl_uek2_ctx_t uek2_ctx;
+
+	if (getenv("ORCL_UEK2_XRC_COMPAT_MODE") &&
+	    (*ps == RDMA_PS_TCP) && context) {
+		/* UEK2 XRC binary compat needed */
+
+		memcpy(&uek2_ctx, &context, sizeof uek2_ctx);
+		if (ORCL_UEK2_CTX_XRC_RECV == uek2_ctx.v.s.val_firstbitfield) {
+			/* qp_type xrc_recv */
+			*qp_type = IBV_QPT_XRC_RECV;
+			*ps = RDMA_PS_IB;
+		} else if (ORCL_UEK2_CTX_XRC_SEND == uek2_ctx.v.s.val_firstbitfield) {
+			/* qp_type xrc_send */
+			*qp_type = IBV_QPT_XRC_SEND;
+			*ps = RDMA_PS_IB;
+		}
+	}
+}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int rdma_create_id(struct rdma_event_channel *channel,
 		   struct rdma_cm_id **id, void *context,
 		   enum rdma_port_space ps)
@@ -562,6 +642,11 @@ int rdma_create_id(struct rdma_event_channel *channel,
 
 	qp_type = (ps == RDMA_PS_IPOIB || ps == RDMA_PS_UDP) ?
 		  IBV_QPT_UD : IBV_QPT_RC;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	rdma_process_oracle_uek2_ctx(context, &ps, &qp_type);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	return rdma_create_id2(channel, id, context, ps, qp_type);
 }
 
@@ -1397,6 +1482,8 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 {
 	struct ibv_qp_init_attr_ex attr_ex;
 	int ret;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	int init_attr_base_size;
 
         /*
@@ -1418,12 +1505,42 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 	memset(&attr_ex, 0, sizeof(attr_ex)); /* pre-set all fields to zero */
 	/* copy only common fields */
 	memcpy(&attr_ex, qp_init_attr, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memcpy(&attr_ex, qp_init_attr, sizeof(*qp_init_attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	attr_ex.comp_mask = IBV_QP_INIT_ATTR_PD;
 	attr_ex.pd = pd ? pd : id->pd;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/* Check if this call is for Oracle XRC endpoint */
+	if (qp_init_attr->qp_type == IBV_QPT_XRC) {
+		/*
+		 * another private handshake to indicate
+		 * XRC send or receive side endpoint
+		 */
+		if (qp_init_attr->cap.max_send_wr == 0) {
+			attr_ex.qp_type = IBV_QPT_XRC_RECV;
+			if (qp_init_attr->xrc_domain) {
+				attr_ex.comp_mask |= IBV_QP_INIT_ATTR_XRCD;
+				attr_ex.xrcd = (struct ibv_xrcd *)
+					qp_init_attr->xrc_domain;
+			}
+		} else {
+			attr_ex.qp_type = IBV_QPT_XRC_SEND;
+		}
+	}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	ret = rdma_create_qp_ex(id, &attr_ex);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* copy only common fields */
 	memcpy(qp_init_attr, &attr_ex, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memcpy(qp_init_attr, &attr_ex, sizeof(*qp_init_attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
+
 	return ret;
 }
 
