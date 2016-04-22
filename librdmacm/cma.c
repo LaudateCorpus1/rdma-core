@@ -1381,12 +1381,33 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 {
 	struct ibv_qp_init_attr_ex attr_ex;
 	int ret;
+	int init_attr_base_size;
 
-	memcpy(&attr_ex, qp_init_attr, sizeof(*qp_init_attr));
+        /*
+	 * XRC binary compatibility patches to libibverbs add 'xrc_domain'
+	 * field at the end of "struct ibv_qp_init_attr" in libibverbs
+	 * so it is not completely isomorphic to initial fields in
+	 * "struct ibv_qp_init_attr_ex".
+	 *
+	 * We should copy below only the shared fields excluding the
+	 * xrc_domain field from "struct inv_qp_init_attr" into the
+	 * "struct ibv_qp_init_attr_ex" otherwise it clobbers the field
+	 * immediately following the isomorphic initial fields.
+	 *
+	 * (The xrc_domain any way has no affect on the sender side, so
+	 * there is no need to copy it anyway!)
+	 */
+	init_attr_base_size = offsetof(struct ibv_qp_init_attr, xrc_domain);
+
+	memset(&attr_ex, 0, sizeof(attr_ex)); /* pre-set all fields to zero */
+	/* copy only common fields */
+	memcpy(&attr_ex, qp_init_attr, init_attr_base_size);
+
 	attr_ex.comp_mask = IBV_QP_INIT_ATTR_PD;
 	attr_ex.pd = pd ? pd : id->pd;
 	ret = rdma_create_qp_ex(id, &attr_ex);
-	memcpy(qp_init_attr, &attr_ex, sizeof(*qp_init_attr));
+	/* copy only common fields */
+	memcpy(qp_init_attr, &attr_ex, init_attr_base_size);
 	return ret;
 }
 
