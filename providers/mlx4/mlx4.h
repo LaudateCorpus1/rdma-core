@@ -108,6 +108,10 @@ struct mlx4_context {
 	int				bf_offset;
 	pthread_spinlock_t		bf_lock;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	int				shut_up_bf;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	struct {
 		struct mlx4_qp	      **table;
 		int			refcnt;
