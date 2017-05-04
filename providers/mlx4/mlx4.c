@@ -1,4 +1,4 @@
-1;95;0c/*
+/*
  * Copyright (c) 2007 Cisco, Inc.  All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -167,6 +167,21 @@ static void mlx4_read_env(void)
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static int get_shut_up_bf(void)
+{
+	char *env;
+
+	env = getenv("MLX4_SHUT_UP_BF");
+	if (!env)
+		return 0;
+
+	return strtol(env, NULL, 0) != 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 static int mlx4_map_internal_clock(struct mlx4_device *mdev,
 				   struct ibv_context *ibv_ctx)
 {
@@ -269,6 +284,10 @@ static struct verbs_context *mlx4_alloc_context(struct ibv_device *ibdev,
 		context->bf_page     = NULL;
 		context->bf_buf_size = 0;
 	}
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	context->shut_up_bf = get_shut_up_bf();
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	verbs_set_ops(verbs_ctx, &mlx4_ctx_ops);
 
