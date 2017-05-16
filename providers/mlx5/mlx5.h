@@ -196,6 +196,10 @@ struct mlx5_resource {
 	uint32_t		rsn;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+extern int mlx5_trace;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct mlx5_device {
 	struct verbs_device	verbs_dev;
 	int			page_size;
@@ -421,6 +425,9 @@ struct mlx5_srq {
 	uint16_t			counter;
 	int				wq_sig;
 	struct ibv_qp		       *cmd_qp;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_srq_legacy	       *ibv_srq_legacy;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct mlx5_tag_entry	       *tm_list; /* vector of all tags */
 	struct mlx5_tag_entry	       *tm_head; /* queue of free tags */
 	struct mlx5_tag_entry	       *tm_tail;
@@ -997,5 +1004,10 @@ static inline uint8_t calc_sig(void *wqe, int size)
 
 	return ~res;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+void *mlx5_get_legacy_xrc(struct ibv_srq *srq);
+void mlx5_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #endif /* MLX5_H */

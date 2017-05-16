@@ -79,6 +79,9 @@ static const struct verbs_match_ent hca_table[] = {
 	{}
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+int mlx5_trace = 0;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 uint32_t mlx5_debug_mask = 0;
 int mlx5_freeze_on_error_cqe;
 
@@ -151,6 +154,10 @@ static const struct verbs_context_ops mlx5_ctx_common_ops = {
 	.read_counters = mlx5_read_counters,
 	.reg_dm_mr = mlx5_reg_dm_mr,
 	.alloc_null_mr = mlx5_alloc_null_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.drv_set_legacy_xrc = mlx5_set_legacy_xrc,
+	.drv_get_legacy_xrc = mlx5_get_legacy_xrc,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 static const struct verbs_context_ops mlx5_ctx_cqev1_ops = {
@@ -443,6 +450,12 @@ static void mlx5_read_env(struct ibv_device *ibdev, struct mlx5_context *ctx)
 	env_value = getenv("MLX5_STALL_CQ_DEC_STEP");
 	if (env_value)
 		mlx5_stall_cq_dec_step = atoi(env_value);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	env_value = getenv("MLX5_TRACE");
+	if (env_value && (strcmp(env_value, "0")))
+		mlx5_trace = 1;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	ctx->stall_adaptive_enable = 0;
 	ctx->stall_cycles = 0;
