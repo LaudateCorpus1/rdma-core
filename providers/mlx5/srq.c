@@ -86,12 +86,22 @@ int mlx5_post_srq_recv(struct ibv_srq *ibsrq,
 		       struct ibv_recv_wr *wr,
 		       struct ibv_recv_wr **bad_wr)
 {
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct mlx5_srq *srq;
+#else
 	struct mlx5_srq *srq = to_msrq(ibsrq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct mlx5_wqe_srq_next_seg *next;
 	struct mlx5_wqe_data_seg *scat;
 	int err = 0;
 	int nreq;
 	int i;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	if (ibsrq->handle == LEGACY_XRC_SRQ_HANDLE)
+		ibsrq = (struct ibv_srq *)(((struct ibv_srq_legacy *) ibsrq)->ibv_srq);
+	srq = to_msrq(ibsrq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	mlx5_spin_lock(&srq->lock);
 
@@ -221,20 +231,21 @@ int mlx5_store_srq(struct mlx5_context *ctx, uint32_t srqn,
 	int tind = srqn >> MLX5_SRQ_TABLE_SHIFT;
 
 	if (!ctx->srq_table[tind].refcnt) {
-		ctx->srq_table[tind].table = calloc(MLX5_QP_TABLE_MASK + 1,
-						   sizeof(struct mlx5_qp *));
+		ctx->srq_table[tind].table = calloc(MLX5_SRQ_TABLE_MASK + 1,
+						   sizeof(struct mlx5_srq *));
 		if (!ctx->srq_table[tind].table)
 			return -1;
 	}
 
 	++ctx->srq_table[tind].refcnt;
-	ctx->srq_table[tind].table[srqn & MLX5_QP_TABLE_MASK] = srq;
+	ctx->srq_table[tind].table[srqn & MLX5_SRQ_TABLE_MASK] = srq;
+
 	return 0;
 }
 
 void mlx5_clear_srq(struct mlx5_context *ctx, uint32_t srqn)
 {
-	int tind = srqn >> MLX5_QP_TABLE_SHIFT;
+	int tind = srqn >> MLX5_SRQ_TABLE_SHIFT;
 
 	if (!--ctx->srq_table[tind].refcnt)
 		free(ctx->srq_table[tind].table);
