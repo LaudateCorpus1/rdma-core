@@ -504,6 +504,26 @@ int mlx5_dereg_mr(struct ibv_mr *ibmr)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+struct ibv_mr *mlx5_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
+			int access)
+{
+	return mlx5_reg_mr(pd, addr, length, access);
+}
+
+int mlx5_dereg_mr_relaxed(struct ibv_mr *mr)
+{
+	return mlx5_dereg_mr(mr);
+}
+
+int mlx5_flush_relaxed_mr(struct ibv_pd *pd)
+{
+       return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct ibv_mw *mlx5_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type)
 {
 	struct ibv_mw *mw;
