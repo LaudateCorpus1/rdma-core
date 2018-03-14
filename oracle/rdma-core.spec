@@ -609,3 +609,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle: Disable loading NFS over RDMA (Aron Silverton) [Orabug: 28667412]
 - oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
 - oracle/spec: Set minimum required kernel (Aron Silverton) [Orabug: 29391672]
+- oracle: Add buildrpm and link spec file (Aron Silverton) [Orabug: 26829960]
