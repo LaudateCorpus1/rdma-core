@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1%{?dist}%{?flavor}
+Release:        1.0.1%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -609,7 +609,7 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
-* Tue Feb 26 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2
+* Tue Feb 26 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.1
 - oracle: Package for Oracle (Aron Silverton) [Orabug: 29410510]
 - oracle/spec: Install pkgconfig files for libs (Aron Silverton) [Orabug: 29410510]
 - oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
@@ -619,3 +619,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
 - oracle/spec: Set minimum required kernel (Aron Silverton) [Orabug: 29391672]
 - oracle: Add buildrpm and link spec file (Aron Silverton) [Orabug: 26829960]
+- oracle/spec: Set initial release number for Oracle (Aron Silverton) [Orabug: 29356186]
