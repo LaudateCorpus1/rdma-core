@@ -46,7 +46,7 @@ Requires:       systemd
 Requires:       udev
 
 # Set minimum kernel version for Oracle UEK5
-Requires:       kernel-uek >= 4.14.14-11
+Requires:       kernel-uek >= 4.14.35-1844
 
 # Oracle previously shipped oracle/ as a stand-alone
 # package called 'rdma', which we're supplanting here.
@@ -608,3 +608,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
 - oracle: Disable loading NFS over RDMA (Aron Silverton) [Orabug: 28667412]
 - oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
+- oracle/spec: Set minimum required kernel (Aron Silverton) [Orabug: 29391672]
