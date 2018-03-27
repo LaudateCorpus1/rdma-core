@@ -335,6 +335,9 @@ struct mlx5_pd {
 	uint32_t			pdn;
 	atomic_int			refcount;
 	struct mlx5_pd			*mprotection_domain;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+       uint8_t				is_inherited; /* e.g. via ibv_share_pd */
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 struct mlx5_parent_domain {
@@ -744,6 +747,12 @@ struct ibv_pd *mlx5_alloc_pd(struct ibv_context *context);
 int mlx5_free_pd(struct ibv_pd *pd);
 
 struct ibv_mr *mlx5_alloc_null_mr(struct ibv_pd *pd);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct ibv_shpd *mlx5_alloc_shpd(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
+struct ibv_pd *mlx5_share_pd(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct ibv_mr *mlx5_reg_mr(struct ibv_pd *pd, void *addr,
 			   size_t length, int access);
 int mlx5_rereg_mr(struct verbs_mr *mr, int flags, struct ibv_pd *pd, void *addr,

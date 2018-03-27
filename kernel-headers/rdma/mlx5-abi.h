@@ -470,5 +470,11 @@ struct mlx5_ib_create_flow {
 	 */
 	struct mlx5_ib_flow_counters_data data[];
 };
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct mlx5_ib_share_pd_resp {
+  __u32    pdn;
+  __u32   reserved;
+};
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #endif /* MLX5_ABI_USER_H */
