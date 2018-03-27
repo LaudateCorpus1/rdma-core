@@ -56,6 +56,8 @@ IBVERBS_1.1 {
 		ibv_ack_async_event;
 		ibv_ack_cq_events;
 		ibv_alloc_pd;
+		ibv_alloc_shpd;
+		ibv_share_pd;
 		ibv_attach_mcast;
 		ibv_close_device;
 		ibv_create_ah;
@@ -123,6 +125,8 @@ IBVERBS_PRIVATE_@IBVERBS_PABI_VERSION@ {
 		ibv_cmd_alloc_dm;
 		ibv_cmd_alloc_mw;
 		ibv_cmd_alloc_pd;
+		ibv_cmd_alloc_shpd;
+		ibv_cmd_share_pd;
 		ibv_cmd_attach_mcast;
 		ibv_cmd_close_xrcd;
 		ibv_cmd_create_ah;

@@ -560,6 +560,12 @@ struct ibv_pd {
 	uint32_t		handle;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct ibv_shpd {
+	uint32_t		handle;
+};
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct ibv_td_init_attr {
 	uint32_t comp_mask;
 };
@@ -1985,6 +1991,20 @@ struct ibv_pd *ibv_alloc_pd(struct ibv_context *context);
  * ibv_dealloc_pd - Free a protection domain
  */
 int ibv_dealloc_pd(struct ibv_pd *pd);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/**
+ * ibv_alloc_shpd - Mark a pd as shareable & return shareable pd
+ */
+struct ibv_shpd *ibv_alloc_shpd(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
+
+/**
+ * ibv_share_pd - allocate a process private pd from shared pd
+ */
+struct ibv_pd *ibv_share_pd(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static inline struct ibv_flow *ibv_create_flow(struct ibv_qp *qp,
 					       struct ibv_flow_attr *flow)

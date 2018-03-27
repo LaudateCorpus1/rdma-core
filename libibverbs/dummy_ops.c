@@ -66,6 +66,24 @@ static struct ibv_pd *alloc_pd(struct ibv_context *context)
 	return NULL;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static struct ibv_shpd *
+alloc_shpd(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd)
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+static struct ibv_pd *
+share_pd(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key)
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 static struct ibv_td *alloc_td(struct ibv_context *context,
 			       struct ibv_td_init_attr *init_attr)
 {
@@ -441,6 +459,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	alloc_null_mr,
 	alloc_parent_domain,
 	alloc_pd,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	alloc_shpd,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	alloc_td,
 	async_event,
 	attach_counters_point_flow,
@@ -501,6 +522,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	req_notify_cq,
 	rereg_mr,
 	resize_cq,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	share_pd,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 /*
@@ -554,6 +578,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, alloc_mw);
 	SET_OP(vctx, alloc_null_mr);
 	SET_PRIV_OP(ctx, alloc_pd);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_PRIV_OP_IC(ctx, alloc_shpd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, alloc_parent_domain);
 	SET_OP(vctx, alloc_td);
 	SET_OP(vctx, attach_counters_point_flow);
@@ -615,6 +642,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, req_notify_cq);
 	SET_PRIV_OP(ctx, rereg_mr);
 	SET_PRIV_OP(ctx, resize_cq);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_PRIV_OP_IC(ctx, share_pd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #undef SET_OP
 #undef SET_OP2

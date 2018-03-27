@@ -350,6 +350,51 @@ int ibv_cmd_dealloc_pd(struct ibv_pd *pd)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+int ibv_cmd_alloc_shpd(struct ibv_context *context, struct ibv_pd *pd,
+		       uint64_t share_key, struct ibv_shpd *shpd,
+		       struct ibv_alloc_shpd *cmd, size_t cmd_size,
+		       struct ib_uverbs_alloc_shpd_resp *resp, size_t resp_size)
+{
+	IBV_INIT_CMD_RESP(cmd, cmd_size, ALLOC_SHPD, resp, resp_size);
+
+	cmd->pd_handle = pd->handle;
+	cmd->share_key = share_key;
+
+	if (write(context->cmd_fd, cmd, cmd_size) != cmd_size)
+		return errno;
+
+	(void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
+
+	shpd->handle  = resp->shpd_handle;
+
+	return 0;
+}
+
+int ibv_cmd_share_pd(struct ibv_context *context, struct ibv_shpd *shpd,
+		     uint64_t share_key, struct ibv_pd *pd,
+		     struct ibv_share_pd *cmd, size_t cmd_size,
+		     struct ib_uverbs_share_pd_resp *resp, size_t resp_size)
+{
+	IBV_INIT_CMD_RESP(cmd, cmd_size, SHARE_PD, resp, resp_size);
+
+	cmd->shpd_handle = shpd->handle;
+	cmd->share_key = share_key;
+
+	if (write(context->cmd_fd, cmd, cmd_size) != cmd_size)
+		return errno;
+
+	(void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
+
+	pd->handle  = resp->pd_handle;
+	pd->context = context;
+
+	return 0;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_open_xrcd(struct ibv_context *context, struct verbs_xrcd *xrcd,
 		      int vxrcd_size,
 		      struct ibv_xrcd_init_attr *attr,

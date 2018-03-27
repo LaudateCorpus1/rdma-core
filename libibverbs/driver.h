@@ -224,6 +224,9 @@ struct verbs_context_ops {
 		struct ibv_context *context,
 		struct ibv_parent_domain_init_attr *attr);
 	struct ibv_pd *(*alloc_pd)(struct ibv_context *context);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_shpd *	(*alloc_shpd)(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct ibv_td *(*alloc_td)(struct ibv_context *context,
 				   struct ibv_td_init_attr *init_attr);
 	void (*async_event)(struct ibv_async_event *event);
@@ -332,6 +335,9 @@ struct verbs_context_ops {
 	int (*rereg_mr)(struct verbs_mr *vmr, int flags, struct ibv_pd *pd,
 			void *addr, size_t length, int access);
 	int (*resize_cq)(struct ibv_cq *cq, int cqe);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_pd *		(*share_pd)(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 static inline struct verbs_device *
@@ -414,6 +420,18 @@ int ibv_cmd_alloc_pd(struct ibv_context *context, struct ibv_pd *pd,
 		     struct ibv_alloc_pd *cmd, size_t cmd_size,
 		     struct ib_uverbs_alloc_pd_resp *resp, size_t resp_size);
 int ibv_cmd_dealloc_pd(struct ibv_pd *pd);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+int ibv_cmd_alloc_shpd(struct ibv_context *context, struct ibv_pd *pd,
+		       uint64_t share_key, struct ibv_shpd *shpd,
+		       struct ibv_alloc_shpd *cmd, size_t cmd_size,
+		       struct ib_uverbs_alloc_shpd_resp *resp, size_t resp_size);
+int ibv_cmd_share_pd(struct ibv_context *context, struct ibv_shpd *shpd,
+		     uint64_t share_key, struct ibv_pd *pd,
+		     struct ibv_share_pd *cmd, size_t cmd_size,
+		     struct ib_uverbs_share_pd_resp *resp, size_t resp_size);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_open_xrcd(struct ibv_context *context, struct verbs_xrcd *xrcd,
 		      int vxrcd_size,
 		      struct ibv_xrcd_init_attr *attr,
