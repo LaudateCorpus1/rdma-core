@@ -87,6 +87,10 @@ static const struct verbs_context_ops mlx5_ctx_common_ops = {
 	.query_port    = mlx5_query_port,
 	.alloc_pd      = mlx5_alloc_pd,
 	.dealloc_pd    = mlx5_free_pd,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.alloc_shpd    = mlx5_alloc_shpd,
+	.share_pd      = mlx5_share_pd,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	.reg_mr	       = mlx5_reg_mr,
 	.rereg_mr      = mlx5_rereg_mr,
 	.dereg_mr      = mlx5_dereg_mr,

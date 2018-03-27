@@ -85,6 +85,10 @@ DECLARE_DRV_CMD(mlx5_query_device_ex, IB_USER_VERBS_EX_CMD_QUERY_DEVICE,
 		empty, mlx5_ib_query_device_resp);
 DECLARE_DRV_CMD(mlx5_modify_qp_ex, IB_USER_VERBS_EX_CMD_MODIFY_QP,
 		empty, mlx5_ib_modify_qp_resp);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+DECLARE_DRV_CMD(mlx5_share_pd, IB_USER_VERBS_CMD_SHARE_PD,
+		empty, mlx5_ib_share_pd_resp);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct mlx5_modify_qp {
 	struct ibv_modify_qp_ex		ibv_cmd;
