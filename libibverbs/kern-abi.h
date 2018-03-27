@@ -174,6 +174,10 @@ struct empty {};
 
 DECLARE_CMD(IB_USER_VERBS_CMD_ALLOC_MW, ibv_alloc_mw, ib_uverbs_alloc_mw);
 DECLARE_CMD(IB_USER_VERBS_CMD_ALLOC_PD, ibv_alloc_pd, ib_uverbs_alloc_pd);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+DECLARE_CMD(IB_USER_VERBS_CMD_ALLOC_SHPD, ibv_alloc_shpd, ib_uverbs_alloc_shpd);
+DECLARE_CMD(IB_USER_VERBS_CMD_SHARE_PD, ibv_share_pd, ib_uverbs_share_pd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 DECLARE_CMDX(IB_USER_VERBS_CMD_ATTACH_MCAST, ibv_attach_mcast, ib_uverbs_attach_mcast, empty);
 DECLARE_CMDX(IB_USER_VERBS_CMD_CLOSE_XRCD, ibv_close_xrcd, ib_uverbs_close_xrcd, empty);
 DECLARE_CMD(IB_USER_VERBS_CMD_CREATE_AH, ibv_create_ah, ib_uverbs_create_ah);
