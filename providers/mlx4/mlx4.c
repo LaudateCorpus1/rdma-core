@@ -86,6 +86,10 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 	.query_port    = mlx4_query_port,
 	.alloc_pd      = mlx4_alloc_pd,
 	.dealloc_pd    = mlx4_free_pd,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	.alloc_shpd    = mlx4_alloc_shpd,
+	.share_pd      = mlx4_share_pd,
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	.reg_mr	       = mlx4_reg_mr,
 	.rereg_mr      = mlx4_rereg_mr,
 	.dereg_mr      = mlx4_dereg_mr,
