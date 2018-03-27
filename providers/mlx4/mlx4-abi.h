@@ -70,5 +70,9 @@ DECLARE_DRV_CMD(mlx4_query_device_ex, IB_USER_VERBS_EX_CMD_QUERY_DEVICE,
 		empty, mlx4_uverbs_ex_query_device_resp);
 DECLARE_DRV_CMD(mlx4_resize_cq, IB_USER_VERBS_CMD_RESIZE_CQ,
 		mlx4_ib_resize_cq, empty);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+DECLARE_DRV_CMD(mlx4_share_pd, IB_USER_VERBS_CMD_SHARE_PD,
+		empty, mlx4_ib_share_pd_resp);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #endif /* MLX4_ABI_H */
