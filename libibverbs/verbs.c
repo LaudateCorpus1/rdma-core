@@ -220,6 +220,34 @@ LATEST_SYMVER_FUNC(ibv_dealloc_pd, 1_1, "IBVERBS_1.1",
 	return pd->context->ops.dealloc_pd(pd);
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+LATEST_SYMVER_FUNC(ibv_alloc_shpd, 1_1, "IBVERBS_1.1",
+		   struct ibv_shpd *,
+		   struct ibv_pd *pd,
+		   uint64_t share_key,
+		   struct ibv_shpd *shpd)
+{
+	return pd->context->ops.alloc_shpd(pd, share_key, shpd);
+}
+
+LATEST_SYMVER_FUNC(ibv_share_pd, 1_1, "IBVERBS_1.1",
+		   struct ibv_pd *,
+		   struct ibv_context *context,
+		   struct ibv_shpd *shpd,
+		   uint64_t share_key)
+{
+	struct ibv_pd *pd;
+
+	pd = context->ops.share_pd(context, shpd, share_key);
+	if (pd)
+		pd->context = context;
+
+	return pd;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 LATEST_SYMVER_FUNC(ibv_reg_mr, 1_1, "IBVERBS_1.1",
 		   struct ibv_mr *,
 		   struct ibv_pd *pd, void *addr,

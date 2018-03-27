@@ -88,6 +88,25 @@ enum {
 	IB_USER_VERBS_CMD_CLOSE_XRCD,
 	IB_USER_VERBS_CMD_CREATE_XSRQ,
 	IB_USER_VERBS_CMD_OPEN_QP,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	/*
+	 * Note: 0-40 verbs defined above
+	 * Start oracle verb additions leaving a gap
+	 * for upstream verbs growth.
+	 *
+	 * We start at 46 which is the starting value used
+	 * for these verbs in UEK2 and add them in same
+	 * order.
+	 *
+	 * (Even if we dont care about aligning with UEK2 values,
+	 *  cannot go beyond 63 because of "struct ib_device"
+	 *  has uverbs_cmd_mask which is 64 bits wide!)
+	 */
+#define IB_USER_VERBS_CMD_ORACLE_ADDS_START 46
+	IB_USER_VERBS_CMD_ALLOC_SHPD = IB_USER_VERBS_CMD_ORACLE_ADDS_START,
+                                       /* =46 */
+	IB_USER_VERBS_CMD_SHARE_PD, /* =47 */
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 enum {
@@ -314,6 +333,34 @@ struct ib_uverbs_alloc_pd_resp {
 struct ib_uverbs_dealloc_pd {
 	__u32 pd_handle;
 };
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+struct ib_uverbs_alloc_shpd {
+	__u64 response;
+	__u32 pd_handle;
+	__u32 reserved;
+	__u64 share_key;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_alloc_shpd_resp {
+	__u32 shpd_handle;
+};
+
+struct ib_uverbs_share_pd {
+	__u64 response;
+	__u32 shpd_handle;
+	__u32 reserved;
+	__u64 share_key;
+	__u64 driver_data[0];
+};
+
+struct ib_uverbs_share_pd_resp {
+	__u32 pd_handle;
+};
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ib_uverbs_open_xrcd {
 	__aligned_u64 response;
