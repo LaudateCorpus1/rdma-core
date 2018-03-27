@@ -188,4 +188,11 @@ struct mlx4_uverbs_ex_query_device_resp {
 	struct mlx4_ib_tso_caps tso_caps;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct mlx4_ib_share_pd_resp {
+	__u32   pdn;
+	__u32   reserved;
+};
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 #endif /* MLX4_ABI_USER_H */
