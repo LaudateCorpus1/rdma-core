@@ -370,6 +370,48 @@ int mlx5_free_pd(struct ibv_pd *pd)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+struct ibv_shpd *mlx5_alloc_shpd(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd)
+{
+	struct ibv_alloc_shpd cmd;
+	struct ib_uverbs_alloc_shpd_resp resp;
+
+	if (ibv_cmd_alloc_shpd(pd->context, pd, share_key, shpd, &cmd, sizeof cmd,
+			       &resp, sizeof resp)) {
+		return NULL;
+	}
+
+	return shpd;
+}
+
+
+struct ibv_pd *mlx5_share_pd(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key)
+{
+	struct ibv_share_pd	 cmd;
+	struct mlx5_share_pd_resp resp;
+	struct mlx5_pd		*pd;
+
+	pd = calloc(1, sizeof *pd);
+	if (!pd)
+		return NULL;
+
+	if (ibv_cmd_share_pd(context, shpd, share_key, &pd->ibv_pd, &cmd, sizeof cmd,
+			     &resp.ibv_resp, sizeof resp)) {
+		free(pd);
+		return NULL;
+	}
+
+	atomic_init(&pd->refcount, 1);
+	pd->pdn = resp.pdn;
+
+	pd->is_inherited = 1;
+
+	return &pd->ibv_pd;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct ibv_mr *mlx5_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 			   int acc)
 {
@@ -1716,8 +1758,19 @@ static struct ibv_qp *create_qp(struct ibv_context *context,
 	if (qp->wq_sig)
 		cmd.flags |= MLX5_QP_FLAG_SIGNATURE;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+	if ((!(attr->comp_mask & IBV_QP_INIT_ATTR_PD) ||
+	     !to_mpd(attr->pd)->is_inherited) &&
+	    use_scatter_to_cqe())
+		cmd.flags |= MLX5_QP_FLAG_SCATTER_CQE;
+
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+
 	if (use_scatter_to_cqe())
 		cmd.flags |= MLX5_QP_FLAG_SCATTER_CQE;
+
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	ret = mlx5_calc_wq_size(ctx, attr, qp);
 	if (ret < 0) {
