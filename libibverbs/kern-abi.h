@@ -228,6 +228,17 @@ DECLARE_CMD_EX(IB_USER_VERBS_EX_CMD_MODIFY_QP, ibv_modify_qp_ex, ib_uverbs_ex_mo
 DECLARE_CMD_EXX(IB_USER_VERBS_EX_CMD_MODIFY_WQ, ibv_modify_wq, ib_uverbs_ex_modify_wq, empty);
 DECLARE_CMD_EX(IB_USER_VERBS_EX_CMD_QUERY_DEVICE, ibv_query_device_ex, ib_uverbs_ex_query_device);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+struct ibv_reg_mr_resp_uek4 {
+	__u32 mr_handle;
+	__u32 lkey;
+	__u32 rkey;
+	__u32 reserved; /* UEK4 padding introduced by Orabug 20930262 */
+};
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 /*
  * Both ib_uverbs_create_qp and ib_uverbs_ex_create_qp start with the same
  * structure, this function converts the ex version into the normal version
