@@ -439,8 +439,18 @@ int ibv_cmd_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 		   size_t cmd_size,
 		   struct ib_uverbs_reg_mr_resp *resp, size_t resp_size)
 {
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_reg_mr_resp_uek4 uek4_resp;
 
-	IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR, resp, resp_size);
+	if (is_uek4_or_older_linux) {
+		if (!resp || resp_size > sizeof(uek4_resp))
+			return ENOSPC;
+
+		memcpy(&uek4_resp, resp, resp_size);
+		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR, &uek4_resp, sizeof(uek4_resp));
+	} else
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR, resp, resp_size);
 
 	cmd->start 	  = (uintptr_t) addr;
 	cmd->length 	  = length;
@@ -452,6 +462,11 @@ int ibv_cmd_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 		return errno;
 
 	(void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	if (is_uek4_or_older_linux)
+		memcpy(resp, &uek4_resp, resp_size);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	mr->handle  = resp->mr_handle;
 	mr->lkey    = resp->lkey;
@@ -498,8 +513,16 @@ int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
                    size_t cmd_size,
                    struct ib_uverbs_reg_mr_resp *resp, size_t resp_size)
 {
+	struct ibv_reg_mr_resp_uek4 uek4_resp;
 
-        IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR_RELAXED, resp, resp_size);
+	if (is_uek4_or_older_linux) {
+		if (!resp || resp_size > sizeof(uek4_resp))
+			return ENOSPC;
+
+		memcpy(&uek4_resp, resp, resp_size);
+		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR_RELAXED_OLD, &uek4_resp, sizeof(uek4_resp));
+	} else
+		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR_RELAXED, resp, resp_size);
 
         cmd->start        = (uintptr_t) addr;
         cmd->length       = length;
@@ -511,6 +534,9 @@ int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
                 return errno;
 
         (void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
+
+	if (is_uek4_or_older_linux)
+		memcpy(resp, &uek4_resp, resp_size);
 
         mr->handle  = resp->mr_handle;
         mr->lkey    = resp->lkey;
@@ -565,7 +591,11 @@ int ibv_cmd_dereg_mr_relaxed(struct ibv_mr *mr)
 {
         struct ibv_dereg_mr cmd;
 
-        IBV_INIT_CMD(&cmd, sizeof cmd, DEREG_MR_RELAXED);
+	if (is_uek4_or_older_linux)
+		IBV_INIT_CMD(&cmd, sizeof cmd, DEREG_MR_RELAXED_OLD);
+	else
+		IBV_INIT_CMD(&cmd, sizeof cmd, DEREG_MR_RELAXED);
+
         cmd.mr_handle = mr->handle;
 
         if (write(mr->context->cmd_fd, &cmd, sizeof cmd) != sizeof cmd)
@@ -594,7 +624,11 @@ int ibv_cmd_flush_relaxed_mr(struct ibv_pd *pd)
 {
         struct ibv_flush_relaxed_mr cmd;
 
-        IBV_INIT_CMD(&cmd, sizeof cmd, FLUSH_RELAXED_MR);
+	if (is_uek4_or_older_linux)
+		IBV_INIT_CMD(&cmd, sizeof cmd, FLUSH_RELAXED_MR_OLD);
+	else
+		IBV_INIT_CMD(&cmd, sizeof cmd, FLUSH_RELAXED_MR);
+
         cmd.pd_handle = pd->handle;
 
         if (write(pd->context->cmd_fd, &cmd, sizeof cmd) != sizeof cmd)
