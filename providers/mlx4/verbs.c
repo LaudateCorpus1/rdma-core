@@ -330,6 +330,8 @@ struct ibv_mr *mlx4_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 	return mr;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
 			   enum ibv_access_flags access)
 {
@@ -361,6 +363,8 @@ struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
 	return mr;
 }
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int mlx4_rereg_mr(struct ibv_mr *mr,
 		  int flags,
 		  struct ibv_pd *pd, void *addr,
@@ -391,6 +395,8 @@ int mlx4_dereg_mr(struct ibv_mr *mr)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 int mlx4_dereg_mr_relaxed(struct ibv_mr *mr)
 {
 	int ret;
@@ -413,6 +419,8 @@ int mlx4_flush_relaxed_mr(struct ibv_pd *pd)
 
 	return 0;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_mw *mlx4_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type)
 {
@@ -744,6 +752,8 @@ int mlx4_destroy_cq(struct ibv_cq *cq)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 void *mlx4_get_legacy_xrc(struct ibv_srq *srq)
 {
 	struct mlx4_srq	*msrq = to_msrq(srq);
@@ -758,6 +768,8 @@ void mlx4_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq)
 	msrq->ibv_srq_legacy = legacy_xrc_srq;
 }
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 struct ibv_srq *mlx4_create_srq(struct ibv_pd *pd,
 				struct ibv_srq_init_attr *attr)
 {
@@ -770,7 +782,11 @@ struct ibv_srq *mlx4_create_srq(struct ibv_pd *pd,
 	if (attr->attr.max_wr > 1 << 16 || attr->attr.max_sge > 64)
 		return NULL;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	srq = calloc(1, sizeof *srq);
+#else
+	srq = malloc(sizeof *srq);
+#endif
 	if (!srq)
 		return NULL;
 
@@ -833,8 +849,10 @@ int mlx4_modify_srq(struct ibv_srq *srq,
 {
 	struct ibv_modify_srq cmd;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE)
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return ibv_cmd_modify_srq(srq, attr, attr_mask, &cmd, sizeof cmd);
 }
@@ -844,8 +862,10 @@ int mlx4_query_srq(struct ibv_srq *srq,
 {
 	struct ibv_query_srq cmd;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE)
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return ibv_cmd_query_srq(srq, attr, &cmd, sizeof cmd);
 }
@@ -853,20 +873,24 @@ int mlx4_query_srq(struct ibv_srq *srq,
 int mlx4_destroy_srq(struct ibv_srq *srq)
 {
 	int ret;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_srq *legacy_srq = NULL;
 
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE) {
 		legacy_srq = srq;
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
 	}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (to_msrq(srq)->ext_srq) {
 		ret =  mlx4_destroy_xrc_srq(srq);
 		if (ret)
 			return ret;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 		if (legacy_srq)
 			free(legacy_srq);
+#endif
 
 		return 0;
 	}
@@ -1019,9 +1043,11 @@ static struct ibv_qp *create_qp_ex(struct ibv_context *context,
 	if (attr->comp_mask & ~MLX4_CREATE_QP_SUP_COMP_MASK)
 		return NULL;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (attr->qp_type == IBV_QPT_XRC && attr->recv_cq &&
 		attr->cap.max_recv_wr > 0 && mlx4_trace)
 		fprintf(stderr, PFX "Warning: Legacy XRC sender should not use a recieve cq\n");
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	qp = calloc(1, sizeof *qp);
 	if (!qp)
@@ -1040,8 +1066,11 @@ static struct ibv_qp *create_qp_ex(struct ibv_context *context,
 	}
 
 	if (attr->srq || attr->qp_type == IBV_QPT_XRC_SEND ||
-	    attr->qp_type == IBV_QPT_XRC_RECV ||
-	    attr->qp_type == IBV_QPT_XRC) {
+	    attr->qp_type == IBV_QPT_XRC_RECV
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	    || attr->qp_type == IBV_QPT_XRC
+#endif
+	    ) {
 		attr->cap.max_recv_wr = qp->rq.wqe_cnt = attr->cap.max_recv_sge = 0;
 	} else {
 		qp->rq.wqe_cnt = align_queue_size(attr->cap.max_recv_wr);
@@ -1161,6 +1190,8 @@ struct ibv_qp *mlx4_create_qp(struct ibv_pd *pd, struct ibv_qp_init_attr *attr)
 {
 	struct ibv_qp_init_attr_ex attr_ex;
 	struct ibv_qp *qp;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* We should copy below only the shared fields excluding the xrc_domain field.
 	 * Otherwise we may have an ABI issue with applications that were compiled
 	 * without the xrc_domain field. The xrc_domain any way has no affect in
@@ -1172,11 +1203,21 @@ struct ibv_qp *mlx4_create_qp(struct ibv_pd *pd, struct ibv_qp_init_attr *attr)
 	memset(&attr_ex, 0, sizeof(attr_ex)); /* pre-set all fields to zero */
 	/* copying only shared fields */
 	memcpy(&attr_ex, attr, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memcpy(&attr_ex, attr, sizeof *attr);
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
+
 	attr_ex.comp_mask = IBV_QP_INIT_ATTR_PD;
 	attr_ex.pd = pd;
 	qp = mlx4_create_qp_ex(pd->context, &attr_ex);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (qp)
 		memcpy(attr, &attr_ex, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	if (qp)
+		memcpy(attr, &attr_ex, sizeof *attr);
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
+
 	return qp;
 }
 

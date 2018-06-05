@@ -195,10 +195,14 @@ static int dereg_mr(struct ibv_mr *mr)
 	return ENOSYS;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 static int dereg_mr_relaxed(struct ibv_mr *mr)
 {
 	return ENOSYS;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int destroy_ah(struct ibv_ah *ah)
 {
@@ -241,6 +245,8 @@ static int detach_mcast(struct ibv_qp *qp, const union ibv_gid *gid,
 	return ENOSYS;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 static void *drv_get_legacy_xrc(struct ibv_srq *srq)
 {
 	return NULL;
@@ -254,6 +260,8 @@ static int flush_relaxed_mr(struct ibv_pd *pd)
 {
 	return ENOSYS;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int get_srq_num(struct ibv_srq *srq, uint32_t *srq_num)
 {
@@ -367,12 +375,16 @@ static struct ibv_mr *reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 	return NULL;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 static struct ibv_mr *reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
 			     int access)
 {
 	errno = ENOSYS;
 	return NULL;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int req_notify_cq(struct ibv_cq *cq, int solicited_only)
 {
@@ -426,7 +438,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	dealloc_pd,
 	dealloc_td,
 	dereg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	dereg_mr_relaxed,
+#endif
 	destroy_ah,
 	destroy_cq,
 	destroy_flow,
@@ -435,9 +449,11 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	destroy_srq,
 	destroy_wq,
 	detach_mcast,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	drv_get_legacy_xrc,
 	drv_set_legacy_xrc,
 	flush_relaxed_mr,
+#endif
 	get_srq_num,
 	modify_cq,
 	modify_qp,
@@ -457,7 +473,9 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	query_rt_values,
 	query_srq,
 	reg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	reg_mr_relaxed,
+#endif
 	req_notify_cq,
 	rereg_mr,
 	resize_cq,
@@ -516,7 +534,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, dealloc_pd);
 	SET_OP(vctx, dealloc_td);
 	SET_OP(ctx, dereg_mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	SET_OP(ctx, dereg_mr_relaxed);
+#endif
 	SET_OP(ctx, destroy_ah);
 	SET_OP(ctx, destroy_cq);
 	SET_OP2(vctx, ibv_destroy_flow, destroy_flow);
@@ -525,9 +545,11 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, destroy_srq);
 	SET_OP(vctx, destroy_wq);
 	SET_OP(ctx, detach_mcast);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	SET_OP(vctx, drv_get_legacy_xrc);
 	SET_OP(vctx, drv_set_legacy_xrc);
 	SET_OP(ctx, flush_relaxed_mr);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, get_srq_num);
 	SET_OP(vctx, modify_cq);
 	SET_OP(ctx, modify_qp);
@@ -547,7 +569,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(vctx, query_rt_values);
 	SET_OP(ctx, query_srq);
 	SET_OP(ctx, reg_mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	SET_OP(ctx, reg_mr_relaxed);
+#endif
 	SET_OP(ctx, req_notify_cq);
 	SET_OP(ctx, rereg_mr);
 	SET_OP(ctx, resize_cq);

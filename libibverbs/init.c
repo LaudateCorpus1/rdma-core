@@ -43,7 +43,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 #include <sys/utsname.h>
+#endif
 #include <dirent.h>
 #include <errno.h>
 #include <assert.h>
@@ -52,8 +54,11 @@
 #include <util/util.h>
 #include "ibverbs.h"
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 int is_uek4_or_older_linux;
 int uek_abi_ver;
+#endif
+
 int abi_ver;
 
 struct ibv_driver_name {
@@ -524,6 +529,8 @@ static int check_abi_version(const char *path)
 {
 	char value[8];
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 	if (ibv_read_sysfs_file(path, "class/infiniband_verbs/uek_abi_version",
 				value, sizeof value) >= 0) {
 		uek_abi_ver = strtol(value, NULL, 10);
@@ -559,6 +566,8 @@ static int check_abi_version(const char *path)
 		is_uek4_or_older_linux = 1;
 #endif /* WITHOUT_UEK5_TEMPORARY_DETECTION */
 	}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (ibv_read_sysfs_file(path, "class/infiniband_verbs/abi_version",
 				value, sizeof value) < 0) {

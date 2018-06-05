@@ -43,7 +43,9 @@
 #include <string.h>
 #include <linux/types.h>
 #include <stdint.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 #include <infiniband/ofa_verbs.h>
+#endif
 
 #ifdef __cplusplus
 #include <limits>
@@ -396,8 +398,10 @@ struct ibv_async_event {
 		struct ibv_srq *srq;
 		struct ibv_wq  *wq;
 		int		port_num;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 		/* For source compatible with Legacy API */
 		uint32_t	xrc_qp_num;
+#endif
 	} element;
 	enum ibv_event_type	event_type;
 };
@@ -814,8 +818,10 @@ enum ibv_qp_type {
 	IBV_QPT_RC = 2,
 	IBV_QPT_UC,
 	IBV_QPT_UD,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* XRC compatible code */
 	IBV_QPT_XRC,
+#endif
 	IBV_QPT_RAW_PACKET = 8,
 	IBV_QPT_XRC_SEND = 9,
 	IBV_QPT_XRC_RECV,
@@ -838,8 +844,10 @@ struct ibv_qp_init_attr {
 	struct ibv_qp_cap	cap;
 	enum ibv_qp_type	qp_type;
 	int			sq_sig_all;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* Below is needed for backwards compatabile */
 	struct ibv_xrc_domain  *xrc_domain;
+#endif
 };
 
 enum ibv_qp_init_attr_mask {
@@ -1041,6 +1049,7 @@ struct ibv_send_wr {
 			uint32_t	remote_qkey;
 		} ud;
 	} wr;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	union {
 		union {
 			struct {
@@ -1049,6 +1058,13 @@ struct ibv_send_wr {
 		} qp_type;
 		uint32_t		xrc_remote_srq_num;
 	};
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	union {
+		struct {
+			uint32_t    remote_srqn;
+		} xrc;
+	} qp_type;
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 	union {
 		struct {
 			struct ibv_mw	*mw;
@@ -1115,6 +1131,7 @@ struct ibv_srq {
 	pthread_cond_t		cond;
 	uint32_t		events_completed;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* below are for source compatabilty with legacy XRC,
 	*   padding based on ibv_srq_legacy.
 	*/
@@ -1127,12 +1144,17 @@ struct ibv_srq {
 	uint32_t		xrc_srq_num;
 	struct ibv_xrc_domain	*xrc_domain;
 	struct ibv_cq		*xrc_cq;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 
 /* Not in use in new API, needed for compilation as part of source compat layer */
 enum ibv_event_flags {
 	IBV_XRC_QP_EVENT_FLAG = 0x80000000,
 };
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 /*
  * Work Queue. QP can be created without internal WQs "packaged" inside it,
@@ -1631,12 +1653,12 @@ struct ibv_context_ops {
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_shpd *	(*alloc_shpd)(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
 	struct ibv_pd *		(*share_pd)(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct ibv_mr *         (*reg_mr_relaxed)(struct ibv_pd *pd,
 						  void *addr, size_t length,
 						  int access);
 	int                     (*dereg_mr_relaxed)(struct ibv_mr *mr);
 	int                     (*flush_relaxed_mr)(struct ibv_pd *pd);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 struct ibv_context {
@@ -1702,8 +1724,11 @@ struct ibv_values_ex {
 
 struct verbs_context {
 	/*  "grows up" - new fields go here */
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	void * (*drv_get_legacy_xrc) (struct ibv_srq *ibv_srq);
 	void (*drv_set_legacy_xrc) (struct ibv_srq *ibv_srq, void *legacy_xrc);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	struct ibv_pd *(*alloc_parent_domain)(struct ibv_context *context,
 					      struct ibv_parent_domain_init_attr *attr);
 	int (*dealloc_td)(struct ibv_td *td);
@@ -1959,16 +1984,23 @@ enum ibv_rereg_mr_err_code {
 int ibv_rereg_mr(struct ibv_mr *mr, int flags,
 		 struct ibv_pd *pd, void *addr,
 		 size_t length, int access);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 /**
  * ibv_reg_mr_relaxed - Register a memory region
  */
 struct ibv_mr *ibv_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
 				  size_t length, int access);
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 /**
  * ibv_dereg_mr - Deregister a memory region
  */
 int ibv_dereg_mr(struct ibv_mr *mr);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 
 /**
  * ibv_dereg_mr_relaxed - Deregister a memory region
@@ -1979,6 +2011,8 @@ int ibv_dereg_mr_relaxed(struct ibv_mr *mr);
  * ibv_flush_relaxed_mr - Flush all free mr's in the protection domain
  */
 int ibv_flush_relaxed_mr(struct ibv_pd *pd);
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 /**
  * ibv_alloc_mw - Allocate a memory window

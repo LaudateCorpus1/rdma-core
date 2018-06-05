@@ -40,7 +40,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 #include <search.h>
+#endif
 #include <linux/ip.h>
 #include <dirent.h>
 #include <netinet/in.h>
@@ -271,27 +273,31 @@ LATEST_SYMVER_FUNC(ibv_reg_mr, 1_1, "IBVERBS_1.1",
 	return mr;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 LATEST_SYMVER_FUNC(ibv_reg_mr_relaxed, 1_1, "IBVERBS_1.1",
 		   struct ibv_mr *,
 		   struct ibv_pd *pd, void *addr,
 		   size_t length, int access)
 {
-       struct ibv_mr *mr;
+	struct ibv_mr *mr;
 
-       if (ibv_dontfork_range(addr, length))
-               return NULL;
+	if (ibv_dontfork_range(addr, length))
+		return NULL;
 
-       mr = pd->context->ops.reg_mr_relaxed(pd, addr, length, access);
-       if (mr) {
-               mr->context = pd->context;
-               mr->pd      = pd;
-               mr->addr    = addr;
-               mr->length  = length;
-       } else
-               ibv_dofork_range(addr, length);
+	mr = pd->context->ops.reg_mr_relaxed(pd, addr, length, access);
+	if (mr) {
+		mr->context = pd->context;
+		mr->pd      = pd;
+		mr->addr    = addr;
+		mr->length  = length;
+	} else
+		ibv_dofork_range(addr, length);
 
-       return mr;
+	return mr;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 LATEST_SYMVER_FUNC(ibv_rereg_mr, 1_1, "IBVERBS_1.1",
 		   int,
@@ -366,6 +372,8 @@ LATEST_SYMVER_FUNC(ibv_dereg_mr, 1_1, "IBVERBS_1.1",
 	return ret;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 LATEST_SYMVER_FUNC(ibv_dereg_mr_relaxed, 1_1, "IBVERBS_1.1",
 		   int,
 		   struct ibv_mr *mr)
@@ -387,6 +395,8 @@ LATEST_SYMVER_FUNC(ibv_flush_relaxed_mr, 1_1, "IBVERBS_1.1",
 {
 	return pd->context->ops.flush_relaxed_mr(pd);
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_comp_channel *ibv_create_comp_channel(struct ibv_context *context)
 {
@@ -1031,6 +1041,8 @@ free_resources:
 #endif
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 /* XRC compatibility layer */
 struct ibv_xrc_domain *ibv_open_xrc_domain(struct ibv_context *context,
 					   int fd, int oflag)
@@ -1064,7 +1076,6 @@ struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
 				   struct ibv_cq *xrc_cq,
 				   struct ibv_srq_init_attr *srq_init_attr)
 {
-
 	struct ibv_srq_init_attr_ex ibv_srq_init_attr_ex;
 	struct ibv_srq_legacy *ibv_srq_legacy;
 	struct ibv_srq *ibv_srq;
@@ -1076,6 +1087,7 @@ struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
 		errno = ENOSYS;
 		return NULL;
 	}
+
 	memset(&ibv_srq_init_attr_ex, 0, sizeof ibv_srq_init_attr_ex);
 
 	ibv_srq_init_attr_ex.xrcd = (struct ibv_xrcd *)xrc_domain;
@@ -1164,10 +1176,7 @@ err_free:
 err:
 	ibv_destroy_srq(ibv_srq);
 	return NULL;
-
 }
-
-
 
 static pthread_mutex_t xrc_tree_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void *ibv_xrc_qp_tree;
@@ -1369,3 +1378,4 @@ int ibv_unreg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
 
 }
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */

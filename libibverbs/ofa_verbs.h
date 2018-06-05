@@ -1,6 +1,8 @@
 #ifndef INFINIBAND_OFA_VERBS_H
 #define INFINIBAND_OFA_VERBS_H
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 struct ibv_srq_init_attr;
 struct ibv_cq;
 struct ibv_pd;
@@ -204,7 +206,6 @@ int ibv_reg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
 int ibv_unreg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
 			 uint32_t xrc_qp_num);
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
-#endif
-
-
+#endif /* INFINIBAND_OFA_VERBS_H */

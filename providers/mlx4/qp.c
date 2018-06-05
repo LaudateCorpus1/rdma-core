@@ -270,7 +270,9 @@ int mlx4_post_send(struct ibv_qp *ibqp, struct ibv_send_wr *wr,
 
 		switch (ibqp->qp_type) {
 		case IBV_QPT_XRC_SEND:
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 		case IBV_QPT_XRC:
+#endif
 			ctrl->srcrb_flags |= MLX4_REMOTE_SRQN_FLAGS(wr);
 			/* fall through */
 		case IBV_QPT_RC:
@@ -469,8 +471,11 @@ int mlx4_post_send(struct ibv_qp *ibqp, struct ibv_send_wr *wr,
 out:
 	ctx = to_mctx(ibqp->context);
 
-	if (!ctx->shut_up_bf && nreq == 1 && inl && size > 1 &&
-	    size <= ctx->bf_buf_size / 16) {
+	if (
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	    !ctx->shut_up_bf &&
+#endif
+	    nreq == 1 && inl && size > 1 && size <= ctx->bf_buf_size / 16) {
 		ctrl->owner_opcode |= htobe32((qp->sq.head & 0xffff) << 8);
 
 		ctrl->bf_qpn |= qp->doorbell_qpn;
@@ -645,7 +650,9 @@ void mlx4_calc_sq_wqe_size(struct ibv_qp_cap *cap, enum ibv_qp_type type,
 		break;
 
 	case IBV_QPT_XRC_SEND:
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	case IBV_QPT_XRC:
+#endif
 	case IBV_QPT_RC:
 		size += sizeof (struct mlx4_wqe_raddr_seg);
 		/*
@@ -748,7 +755,9 @@ void mlx4_set_sq_sizes(struct mlx4_qp *qp, struct ibv_qp_cap *cap,
 		break;
 
 	case IBV_QPT_XRC_SEND:
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	case IBV_QPT_XRC:
+#endif
 	case IBV_QPT_UC:
 	case IBV_QPT_RC:
 		wqe_size -= sizeof (struct mlx4_wqe_raddr_seg);

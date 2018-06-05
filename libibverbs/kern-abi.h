@@ -152,12 +152,16 @@ struct ibv_reg_mr {
 	__u32 access_flags;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 struct ibv_reg_mr_resp_uek4 {
 	__u32 mr_handle;
 	__u32 lkey;
 	__u32 rkey;
 	__u32 reserved; /* UEK4 padding introduced by Orabug 20930262 */
 };
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_rereg_mr {
 	struct ib_uverbs_cmd_hdr hdr;
@@ -190,6 +194,8 @@ struct ibv_dealloc_mw {
 	__u32 reserved;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 struct ibv_flush_relaxed_mr{
 	struct ib_uverbs_cmd_hdr hdr;
 	__u32 command;
@@ -197,6 +203,8 @@ struct ibv_flush_relaxed_mr{
 	__u16 out_words;
 	__u32 pd_handle;
 };
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_create_comp_channel {
 	struct ib_uverbs_cmd_hdr hdr;

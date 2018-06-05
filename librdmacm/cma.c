@@ -552,6 +552,8 @@ err:	ucma_free_id(id_priv);
 	return ret;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 /*
  * Definitions for the private handshake between librdmacm and
  * UEK2 XRC transport applications.
@@ -588,6 +590,7 @@ typedef struct orcl_uek2_ctx_s {
 	} v;
 } orcl_uek2_ctx_t;
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 int rdma_create_id(struct rdma_event_channel *channel,
 		   struct rdma_cm_id **id, void *context,
@@ -596,8 +599,9 @@ int rdma_create_id(struct rdma_event_channel *channel,
 	enum ibv_qp_type qp_type;
 
 	qp_type = (ps == RDMA_PS_IPOIB || ps == RDMA_PS_UDP) ?
-		IBV_QPT_UD : IBV_QPT_RC;
+		  IBV_QPT_UD : IBV_QPT_RC;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/*
 	 * We need to override above 'qp_type' setting
 	 * and the 'ps' passed in some cases.
@@ -640,6 +644,7 @@ int rdma_create_id(struct rdma_event_channel *channel,
 			ps = RDMA_PS_IB;
 		}
 	}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return rdma_create_id2(channel, id, context, ps, qp_type);
 }
@@ -1476,6 +1481,8 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 {
 	struct ibv_qp_init_attr_ex attr_ex;
 	int ret;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	int init_attr_base_size;
 
         /*
@@ -1497,10 +1504,14 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 	memset(&attr_ex, 0, sizeof(attr_ex)); /* pre-set all fields to zero */
 	/* copy only common fields */
 	memcpy(&attr_ex, qp_init_attr, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memcpy(&attr_ex, qp_init_attr, sizeof(*qp_init_attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	attr_ex.comp_mask = IBV_QP_INIT_ATTR_PD;
 	attr_ex.pd = pd ? pd : id->pd;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* Check if this call is for Oracle XRC endpoint */
 	if (qp_init_attr->qp_type == IBV_QPT_XRC) {
 		/*
@@ -1518,9 +1529,17 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 			attr_ex.qp_type = IBV_QPT_XRC_SEND;
 		}
 	}
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	ret = rdma_create_qp_ex(id, &attr_ex);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* copy only common fields */
 	memcpy(qp_init_attr, &attr_ex, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memcpy(qp_init_attr, &attr_ex, sizeof(*qp_init_attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
+
 	return ret;
 }
 

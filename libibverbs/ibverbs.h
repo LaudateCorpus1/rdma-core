@@ -49,8 +49,11 @@ struct ibv_abi_compat_v2 {
 	pthread_mutex_t		in_use;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 extern int is_uek4_or_older_linux;
 extern int uek_abi_ver;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 extern int abi_ver;
 extern const struct verbs_context_ops verbs_dummy_ops;
 
@@ -58,7 +61,10 @@ int ibverbs_get_device_list(struct list_head *list);
 int ibverbs_init(void);
 void ibverbs_device_put(struct ibv_device *dev);
 void ibverbs_device_hold(struct ibv_device *dev);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn);
+#endif
 
 struct verbs_ex_private {
 	struct ibv_cq_ex *(*create_cq_ex)(struct ibv_context *context,

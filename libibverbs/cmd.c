@@ -430,6 +430,7 @@ int ibv_cmd_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 		   size_t cmd_size,
 		   struct ib_uverbs_reg_mr_resp *resp, size_t resp_size)
 {
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_reg_mr_resp_uek4 uek4_resp;
 
 	if (is_uek4_or_older_linux) {
@@ -439,6 +440,7 @@ int ibv_cmd_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 		memcpy(&uek4_resp, resp, resp_size);
 		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR, &uek4_resp, sizeof(uek4_resp));
 	} else
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 		IBV_INIT_CMD_RESP(cmd, cmd_size, REG_MR, resp, resp_size);
 
 	cmd->start 	  = (uintptr_t) addr;
@@ -452,8 +454,10 @@ int ibv_cmd_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 
 	(void) VALGRIND_MAKE_MEM_DEFINED(resp, resp_size);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (is_uek4_or_older_linux)
 		memcpy(resp, &uek4_resp, resp_size);
+#endif
 
 	mr->handle  = resp->mr_handle;
 	mr->lkey    = resp->lkey;
@@ -491,6 +495,8 @@ int ibv_cmd_rereg_mr(struct ibv_mr *mr, uint32_t flags, void *addr,
 
 	return 0;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 
 int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
                    uint64_t hca_va, int access,
@@ -531,6 +537,8 @@ int ibv_cmd_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
         return 0;
 }
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_dereg_mr(struct ibv_mr *mr)
 {
 	struct ibv_dereg_mr cmd;
@@ -568,6 +576,8 @@ int ibv_cmd_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type,
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 int ibv_cmd_dereg_mr_relaxed(struct ibv_mr *mr)
 {
         struct ibv_dereg_mr cmd;
@@ -585,6 +595,8 @@ int ibv_cmd_dereg_mr_relaxed(struct ibv_mr *mr)
         return 0;
 }
 
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 int ibv_cmd_dealloc_mw(struct ibv_mw *mw,
 		       struct ibv_dealloc_mw *cmd, size_t cmd_size)
 {
@@ -597,6 +609,8 @@ int ibv_cmd_dealloc_mw(struct ibv_mw *mw,
 
 	return 0;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 
 int ibv_cmd_flush_relaxed_mr(struct ibv_pd *pd)
 {
@@ -614,6 +628,8 @@ int ibv_cmd_flush_relaxed_mr(struct ibv_pd *pd)
 
         return 0;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 int ibv_cmd_create_cq(struct ibv_context *context, int cqe,
 		      struct ibv_comp_channel *channel,
@@ -1012,7 +1028,6 @@ static int create_qp_ex_common(struct verbs_qp *qp,
 	cmd->user_handle = (uintptr_t)qp;
 
 	if (qp_attr->comp_mask & IBV_QP_INIT_ATTR_XRCD) {
-		/* XRC receiver side */
 		vxrcd = container_of(qp_attr->xrcd, struct verbs_xrcd, xrcd);
 		cmd->pd_handle	= vxrcd->handle;
 	} else {
@@ -1031,9 +1046,11 @@ static int create_qp_ex_common(struct verbs_qp *qp,
 		} else {
 			cmd->send_cq_handle = qp_attr->send_cq->handle;
 
-			/* XRC sender doesn't have a receive cq */
-			if (qp_attr->qp_type != IBV_QPT_XRC_SEND &&
-					qp_attr->qp_type != IBV_QPT_XRC) {
+			if (qp_attr->qp_type != IBV_QPT_XRC_SEND
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+			    && qp_attr->qp_type != IBV_QPT_XRC
+#endif
+			    ) {
 				cmd->recv_cq_handle = qp_attr->recv_cq->handle;
 				cmd->srq_handle = qp_attr->srq ? qp_attr->srq->handle :
 								 0;
@@ -1047,8 +1064,12 @@ static int create_qp_ex_common(struct verbs_qp *qp,
 	cmd->max_recv_sge    = qp_attr->cap.max_recv_sge;
 	cmd->max_inline_data = qp_attr->cap.max_inline_data;
 	cmd->sq_sig_all	     = qp_attr->sq_sig_all;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	cmd->qp_type         = (qp_attr->qp_type == IBV_QPT_XRC) ?
 				IBV_QPT_XRC_SEND : qp_attr->qp_type;
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	cmd->qp_type         = qp_attr->qp_type;
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 	cmd->is_srq	     = !!qp_attr->srq;
 	cmd->reserved	     = 0;
 

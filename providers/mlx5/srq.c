@@ -86,17 +86,23 @@ int mlx5_post_srq_recv(struct ibv_srq *ibsrq,
 		       struct ibv_recv_wr *wr,
 		       struct ibv_recv_wr **bad_wr)
 {
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct mlx5_srq *srq;
+#else
+	struct mlx5_srq *srq = to_msrq(ibsrq);
+#endif
 	struct mlx5_wqe_srq_next_seg *next;
 	struct mlx5_wqe_data_seg *scat;
 	int err = 0;
 	int nreq;
 	int i;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (ibsrq->handle == LEGACY_XRC_SRQ_HANDLE)
 		ibsrq = (struct ibv_srq *)(((struct ibv_srq_legacy *) ibsrq)->ibv_srq);
-
 	srq = to_msrq(ibsrq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 	mlx5_spin_lock(&srq->lock);
 
 	for (nreq = 0; wr; ++nreq, wr = wr->next) {

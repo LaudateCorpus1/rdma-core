@@ -461,6 +461,8 @@ int mlx5_dereg_mr(struct ibv_mr *ibmr)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 struct ibv_mr *mlx5_reg_mr_relaxed(struct ibv_pd *pd, void *addr, size_t length,
 			int access)
 {
@@ -476,6 +478,8 @@ int mlx5_flush_relaxed_mr(struct ibv_pd *pd)
 {
        return 0;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_mw *mlx5_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type)
 {
@@ -903,6 +907,8 @@ int mlx5_destroy_cq(struct ibv_cq *cq)
 	return 0;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 void *mlx5_get_legacy_xrc(struct ibv_srq *srq)
 {
 	struct mlx5_srq *msrq = to_msrq(srq);
@@ -917,6 +923,8 @@ void mlx5_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq)
 	msrq->ibv_srq_legacy = legacy_xrc_srq;
 	return;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_srq *mlx5_create_srq(struct ibv_pd *pd,
 				struct ibv_srq_init_attr *attr)
@@ -1028,8 +1036,10 @@ int mlx5_modify_srq(struct ibv_srq *srq,
 {
 	struct ibv_modify_srq cmd;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE)
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return ibv_cmd_modify_srq(srq, attr, attr_mask, &cmd, sizeof cmd);
 }
@@ -1039,8 +1049,10 @@ int mlx5_query_srq(struct ibv_srq *srq,
 {
 	struct ibv_query_srq cmd;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE)
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return ibv_cmd_query_srq(srq, attr, &cmd, sizeof cmd);
 }
@@ -1048,16 +1060,19 @@ int mlx5_query_srq(struct ibv_srq *srq,
 int mlx5_destroy_srq(struct ibv_srq *srq)
 {
 	int ret;
-	struct mlx5_srq *msrq;
 	struct mlx5_context *ctx = to_mctx(srq->context);
+#ifdef WITHOUT_ORACLE_EXTENSIONS
+	struct mlx5_srq *msrq = to_msrq(srq);
+#else /* !WITHOUT_ORACLE_EXTENSIONS */
+	struct mlx5_srq *msrq;
 	struct ibv_srq *legacy_srq = NULL;
 
 	if (srq->handle == LEGACY_XRC_SRQ_HANDLE) {
 		legacy_srq = srq;
 		srq = (struct ibv_srq *)(((struct ibv_srq_legacy *) srq)->ibv_srq);
 	}
-
 	msrq = to_msrq(srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (msrq->cmd_qp) {
 		ret = mlx5_destroy_qp(msrq->cmd_qp);
@@ -1070,8 +1085,10 @@ int mlx5_destroy_srq(struct ibv_srq *srq)
 	if (ret)
 		return ret;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	msrq = to_msrq(srq);
 	ctx = to_mctx(srq->context);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (ctx->cqe_version && msrq->rsc.type == MLX5_RSC_TYPE_XSRQ)
 		mlx5_clear_uidx(ctx, msrq->rsc.rsn);
@@ -1085,8 +1102,10 @@ int mlx5_destroy_srq(struct ibv_srq *srq)
 	free(msrq->op);
 	free(msrq);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (legacy_srq)
 		free(legacy_srq);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return 0;
 }
@@ -1128,7 +1147,9 @@ static int sq_overhead(struct mlx5_qp *qp, enum ibv_qp_type qp_type)
 
 		break;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	case IBV_QPT_XRC:
+#endif
 	case IBV_QPT_XRC_SEND:
 		size = sizeof(struct mlx5_wqe_ctrl_seg) + mw_bind_size;
 		SWITCH_FALLTHROUGH;
@@ -1680,9 +1701,11 @@ static struct ibv_qp *create_qp(struct ibv_context *context,
 	    (attr->qp_type != IBV_QPT_RAW_PACKET))
 		return NULL;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (attr->qp_type == IBV_QPT_XRC && attr->recv_cq &&
 		attr->cap.max_recv_wr > 0 && mlx5_trace)
 		fprintf(stderr, PFX "Warning: Legacy XRC sender should not use a recieve cq\n");
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	qp = calloc(1, sizeof(*qp));
 	if (!qp) {
@@ -1942,6 +1965,7 @@ struct ibv_qp *mlx5_create_qp(struct ibv_pd *pd,
 	struct ibv_qp *qp;
 	struct ibv_qp_init_attr_ex attrx;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	/* We should copy below only the shared fields excluding the xrc_domain field.
 	 * Otherwise we may have an ABI issue with applications that were compiled
 	 * without the xrc_domain field. The xrc_domain any way has no affect in
@@ -1953,12 +1977,22 @@ struct ibv_qp *mlx5_create_qp(struct ibv_pd *pd,
 	memset(&attrx, 0, sizeof(attrx)); /* pre-set all fields to zero */
 	/* copying only shared fields */
 	memcpy(&attrx, attr, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	memset(&attrx, 0, sizeof(attrx));
+	memcpy(&attrx, attr, sizeof(*attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	attrx.comp_mask = IBV_QP_INIT_ATTR_PD;
 	attrx.pd = pd;
 	qp = create_qp(pd->context, &attrx, NULL);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	if (qp)
 		memcpy(attr, &attrx, init_attr_base_size);
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+	if (qp)
+		memcpy(attr, &attrx, sizeof(*attr));
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	return qp;
 }
@@ -2649,7 +2683,6 @@ struct ibv_srq *mlx5_create_srq_ex(struct ibv_context *context,
 	msrq->srqn = resp.srqn;
 	msrq->rsc.type = MLX5_RSC_TYPE_XSRQ;
 	msrq->rsc.rsn = ctx->cqe_version ? cmd.uidx : resp.srqn;
-	msrq->rsc.metadata = ibsrq;
 
 	return ibsrq;
 

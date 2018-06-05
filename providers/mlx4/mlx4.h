@@ -107,7 +107,10 @@ struct mlx4_context {
 	int				bf_buf_size;
 	int				bf_offset;
 	pthread_spinlock_t		bf_lock;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	int				shut_up_bf;
+#endif
 
 	struct {
 		struct mlx4_qp	      **table;
@@ -185,7 +188,10 @@ struct mlx4_srq {
 	__be32			       *db;
 	uint16_t			counter;
 	uint8_t				ext_srq;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_srq_legacy *ibv_srq_legacy;
+#endif
 };
 
 struct mlx4_wq {
@@ -335,13 +341,17 @@ int mlx4_close_xrcd(struct ibv_xrcd *xrcd);
 
 struct ibv_mr *mlx4_reg_mr(struct ibv_pd *pd, void *addr,
 			    size_t length, int access);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
 				   size_t length, enum ibv_access_flags access);
+#endif
 int mlx4_rereg_mr(struct ibv_mr *mr, int flags, struct ibv_pd *pd,
 		  void *addr, size_t length, int access);
 int mlx4_dereg_mr(struct ibv_mr *mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 int mlx4_dereg_mr_relaxed(struct ibv_mr *mr);
 int mlx4_flush_relaxed_mr(struct ibv_pd *pd);
+#endif
 
 struct ibv_mw *mlx4_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type type);
 int mlx4_dealloc_mw(struct ibv_mw *mw);
@@ -435,8 +445,10 @@ int mlx4_post_wq_recv(struct ibv_wq *ibwq, struct ibv_recv_wr *wr,
 struct ibv_flow *mlx4_create_flow(struct ibv_qp *qp, struct ibv_flow_attr *flow_attr);
 int mlx4_destroy_flow(struct ibv_flow *flow_id);
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 void *mlx4_get_legacy_xrc(struct ibv_srq *srq);
 void mlx4_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq);
+#endif
 
 extern int mlx4_trace;
 

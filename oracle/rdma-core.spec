@@ -476,6 +476,9 @@ rm -rf %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Tue Oct 02 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+- libibverbs: Add additional "#ifndef WITHOUT_ORACLE_EXTENSIONS" markers (Gerd Rausch) [Orabug: 28144657]
+
 * Mon Aug 27 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.4
 - spec: Use Ninja (ninja-build) for building (Aron Silverton) [Orabug: 28305731]
 - oracle: Reconfigure buildrpm for GIT_PROD_START build rule (Aron Silverton) [Orabug: 28557808]

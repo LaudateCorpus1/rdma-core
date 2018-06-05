@@ -49,7 +49,9 @@ int mlx4_cleanup_upon_device_fatal = 0;
 #define PCI_VENDOR_ID_MELLANOX			0x15b3
 #endif
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 int mlx4_trace = 0;
+#endif
 
 #define HCA(v, d) VERBS_PCI_MATCH(PCI_VENDOR_ID_##v, d, NULL)
 static const struct verbs_match_ent hca_table[] = {
@@ -91,13 +93,17 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	.alloc_shpd    = mlx4_alloc_shpd,
 	.share_pd      = mlx4_share_pd,
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+#endif
 	.reg_mr	       = mlx4_reg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	.reg_mr_relaxed = mlx4_reg_mr_relaxed,
+#endif
 	.rereg_mr      = mlx4_rereg_mr,
 	.dereg_mr      = mlx4_dereg_mr,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	.dereg_mr_relaxed = mlx4_dereg_mr_relaxed,
 	.flush_relaxed_mr = mlx4_flush_relaxed_mr,
+#endif
 	.alloc_mw      = mlx4_alloc_mw,
 	.dealloc_mw    = mlx4_dealloc_mw,
 	.bind_mw       = mlx4_bind_mw,
@@ -140,8 +146,10 @@ static const struct verbs_context_ops mlx4_ctx_ops = {
 	.open_xrcd = mlx4_open_xrcd,
 	.query_device_ex = mlx4_query_device_ex,
 	.query_rt_values = mlx4_query_rt_values,
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	.drv_set_legacy_xrc = mlx4_set_legacy_xrc,
 	.drv_get_legacy_xrc = mlx4_get_legacy_xrc,
+#endif
 };
 
 static void mlx4_read_env(void)
@@ -152,10 +160,14 @@ static void mlx4_read_env(void)
 	if (env_value)
 		mlx4_cleanup_upon_device_fatal = (strcmp(env_value, "0")) ? 1 : 0;
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	env_value = getenv("MLX4_TRACE");
 	if (env_value && (strcmp(env_value, "0")))
 		mlx4_trace = 1;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 
 static int get_shut_up_bf(void)
 {
@@ -167,6 +179,8 @@ static int get_shut_up_bf(void)
 
 	return strtol(env, NULL, 0) != 0;
 }
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static int mlx4_map_internal_clock(struct mlx4_device *mdev,
 				   struct ibv_context *ibv_ctx)
@@ -269,7 +283,10 @@ static struct verbs_context *mlx4_alloc_context(struct ibv_device *ibdev,
 		context->bf_page     = NULL;
 		context->bf_buf_size = 0;
 	}
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	context->shut_up_bf = get_shut_up_bf();
+#endif
 
 	verbs_set_ops(verbs_ctx, &mlx4_ctx_ops);
 

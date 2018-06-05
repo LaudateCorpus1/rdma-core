@@ -206,10 +206,11 @@ enum {
 struct mlx5_resource {
 	enum mlx5_rsc_type	type;
 	uint32_t		rsn;
-	void			*metadata;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 extern int mlx5_trace;
+#endif
 
 struct mlx5_device {
 	struct verbs_device	verbs_dev;
@@ -428,7 +429,9 @@ struct mlx5_srq {
 	uint16_t			counter;
 	int				wq_sig;
 	struct ibv_qp		       *cmd_qp;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_srq_legacy	       *ibv_srq_legacy;
+#endif
 	struct mlx5_tag_entry	       *tm_list; /* vector of all tags */
 	struct mlx5_tag_entry	       *tm_head; /* queue of free tags */
 	struct mlx5_tag_entry	       *tm_tail;
@@ -710,17 +713,21 @@ int mlx5_free_pd(struct ibv_pd *pd);
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 struct ibv_shpd *mlx5_alloc_shpd(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
 struct ibv_pd *mlx5_share_pd(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+#endif
 
 struct ibv_mr *mlx5_reg_mr(struct ibv_pd *pd, void *addr,
 			   size_t length, int access);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 struct ibv_mr *mlx5_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
 			   size_t length, int access);
+#endif
 int mlx5_rereg_mr(struct ibv_mr *mr, int flags, struct ibv_pd *pd, void *addr,
 		  size_t length, int access);
 int mlx5_dereg_mr(struct ibv_mr *mr);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 int mlx5_dereg_mr_relaxed(struct ibv_mr *mr);
 int mlx5_flush_relaxed_mr(struct ibv_pd *pd);
+#endif
 
 struct ibv_mw *mlx5_alloc_mw(struct ibv_pd *pd, enum ibv_mw_type);
 int mlx5_dealloc_mw(struct ibv_mw *mw);
@@ -921,7 +928,9 @@ static inline uint8_t calc_sig(void *wqe, int size)
 	return ~res;
 }
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
 void *mlx5_get_legacy_xrc(struct ibv_srq *srq);
 void mlx5_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq);
+#endif
 
 #endif /* MLX5_H */
