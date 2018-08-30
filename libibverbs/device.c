@@ -198,7 +198,11 @@ int verbs_init_context(struct verbs_context *context_ex,
 	pthread_mutex_init(&context->mutex, NULL);
 
 	context_ex->context.abi_compat = __VERBS_ABI_IS_EXTENDED;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	context_ex->sz = ORACLE_VERBS_CONTEXT_SIZE;
+#else /* WITHOUT_ORACLE_EXTENSIONS */
 	context_ex->sz = sizeof(*context_ex);
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 	/*
 	 * In order to maintain backward/forward binary compatibility
@@ -325,8 +329,7 @@ LATEST_SYMVER_FUNC(ibv_get_async_event, 1_1, "IBVERBS_1.1",
 	struct ib_uverbs_async_event_desc ev;
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 	struct ibv_qp *qp;
-	struct verbs_context *vctx;
-	struct ibv_srq_legacy *ibv_srq_legacy = NULL;
+	struct ibv_srq_legacy *ibv_srq_legacy;
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	if (read(context->async_fd, &ev, sizeof ev) != sizeof ev)
@@ -363,13 +366,14 @@ LATEST_SYMVER_FUNC(ibv_get_async_event, 1_1, "IBVERBS_1.1",
 	case IBV_EVENT_SRQ_LIMIT_REACHED:
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 
-		vctx = verbs_get_ctx_op(context, drv_get_legacy_xrc);
-		if (vctx)
-			/* ev.elemant is ibv_srq comes from the kernel, in case there is leagcy one
-			 * it should be returened instead.
-			 */
-			ibv_srq_legacy = vctx->drv_get_legacy_xrc((void *) (uintptr_t) ev.element);
- 
+		/* ev.element is ibv_srq comes from the kernel, in case there is legacy one
+		 * it should be returned instead.
+		 */
+		if (context->ops_oracle.drv_get_legacy_xrc)
+			ibv_srq_legacy = context->ops_oracle.drv_get_legacy_xrc((void *) (uintptr_t) ev.element);
+		else
+			ibv_srq_legacy = NULL;
+
 		event->element.srq = (ibv_srq_legacy) ? (void *)ibv_srq_legacy :
 						(void *) (uintptr_t) ev.element;
 
