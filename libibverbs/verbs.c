@@ -231,7 +231,7 @@ LATEST_SYMVER_FUNC(ibv_alloc_shpd, 1_1, "IBVERBS_1.1",
 		   uint64_t share_key,
 		   struct ibv_shpd *shpd)
 {
-	return pd->context->ops.alloc_shpd(pd, share_key, shpd);
+	return pd->context->ops_oracle.alloc_shpd(pd, share_key, shpd);
 }
 
 LATEST_SYMVER_FUNC(ibv_share_pd, 1_1, "IBVERBS_1.1",
@@ -242,7 +242,7 @@ LATEST_SYMVER_FUNC(ibv_share_pd, 1_1, "IBVERBS_1.1",
 {
 	struct ibv_pd *pd;
 
-	pd = context->ops.share_pd(context, shpd, share_key);
+	pd = context->ops_oracle.share_pd(context, shpd, share_key);
 	if (pd)
 		pd->context = context;
 
@@ -285,7 +285,7 @@ LATEST_SYMVER_FUNC(ibv_reg_mr_relaxed, 1_1, "IBVERBS_1.1",
 	if (ibv_dontfork_range(addr, length))
 		return NULL;
 
-	mr = pd->context->ops.reg_mr_relaxed(pd, addr, length, access);
+	mr = pd->context->ops_oracle.reg_mr_relaxed(pd, addr, length, access);
 	if (mr) {
 		mr->context = pd->context;
 		mr->pd      = pd;
@@ -382,7 +382,7 @@ LATEST_SYMVER_FUNC(ibv_dereg_mr_relaxed, 1_1, "IBVERBS_1.1",
 	void *addr      = mr->addr;
 	size_t length   = mr->length;
 
-	ret = mr->context->ops.dereg_mr_relaxed(mr);
+	ret = mr->context->ops_oracle.dereg_mr_relaxed(mr);
 	if (!ret)
 		ibv_dofork_range(addr, length);
 
@@ -393,7 +393,7 @@ LATEST_SYMVER_FUNC(ibv_flush_relaxed_mr, 1_1, "IBVERBS_1.1",
 		   int,
 		   struct ibv_pd *pd)
 {
-	return pd->context->ops.flush_relaxed_mr(pd);
+	return pd->context->ops_oracle.flush_relaxed_mr(pd);
 }
 
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
@@ -1076,14 +1076,14 @@ struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
 				   struct ibv_cq *xrc_cq,
 				   struct ibv_srq_init_attr *srq_init_attr)
 {
+	void (*drv_set_legacy_xrc)(struct ibv_srq *, void *);
 	struct ibv_srq_init_attr_ex ibv_srq_init_attr_ex;
 	struct ibv_srq_legacy *ibv_srq_legacy;
 	struct ibv_srq *ibv_srq;
 	uint32_t		xrc_srq_num;
-	struct verbs_context *vctx;
 
-	vctx = verbs_get_ctx_op(pd->context, drv_set_legacy_xrc);
-	if (!vctx) {
+	drv_set_legacy_xrc = pd->context->ops_oracle.drv_set_legacy_xrc;
+	if (!drv_set_legacy_xrc) {
 		errno = ENOSYS;
 		return NULL;
 	}
@@ -1168,7 +1168,7 @@ struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
 	  */
 	ibv_srq_legacy->events_completed = 0;
 
-	vctx->drv_set_legacy_xrc(ibv_srq, ibv_srq_legacy);
+	(*drv_set_legacy_xrc)(ibv_srq, ibv_srq_legacy);
 	return (struct ibv_srq *)(ibv_srq_legacy);
 
 err_free:

@@ -285,15 +285,6 @@ static int detach_mcast(struct ibv_qp *qp, const union ibv_gid *gid,
 
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 
-static void *drv_get_legacy_xrc(struct ibv_srq *srq)
-{
-	return NULL;
-}
-
-static void drv_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq)
-{
-}
-
 static int flush_relaxed_mr(struct ibv_pd *pd)
 {
 	return ENOSYS;
@@ -527,8 +518,8 @@ const struct verbs_context_ops verbs_dummy_ops = {
 	destroy_wq,
 	detach_mcast,
 #ifndef WITHOUT_ORACLE_EXTENSIONS
-	drv_get_legacy_xrc,
-	drv_set_legacy_xrc,
+	NULL,	/* drv_get_legacy_xrc: NULL - we need to check presence */
+	NULL,	/* drv_set_legacy_xrc: NULL - we need to check presence */
 	flush_relaxed_mr,
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	free_dm,
@@ -576,6 +567,9 @@ void verbs_set_ops(struct verbs_context *vctx,
 		   const struct verbs_context_ops *ops)
 {
 	struct ibv_context_ops *ctx = &vctx->context.ops;
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	struct ibv_context_ops_oracle *ctx_oracle = &vctx->context.ops_oracle;
+#endif
 
 #define SET_OP(ptr, name)                                                      \
 	do {                                                                   \
@@ -592,10 +586,6 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(vctx, alloc_dm);
 	SET_OP(ctx, alloc_mw);
 	SET_OP(ctx, alloc_pd);
-#ifndef WITHOUT_ORACLE_EXTENSIONS
-	SET_OP(ctx, alloc_shpd);
-	SET_OP(ctx, share_pd);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, alloc_parent_domain);
 	SET_OP(vctx, alloc_td);
 	SET_OP(ctx, async_event);
@@ -620,9 +610,6 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, dealloc_pd);
 	SET_OP(vctx, dealloc_td);
 	SET_OP(ctx, dereg_mr);
-#ifndef WITHOUT_ORACLE_EXTENSIONS
-	SET_OP(ctx, dereg_mr_relaxed);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(ctx, destroy_ah);
 	SET_OP(vctx, destroy_counters);
 	SET_OP(ctx, destroy_cq);
@@ -633,11 +620,6 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(ctx, destroy_srq);
 	SET_OP(vctx, destroy_wq);
 	SET_OP(ctx, detach_mcast);
-#ifndef WITHOUT_ORACLE_EXTENSIONS
-	SET_OP(vctx, drv_get_legacy_xrc);
-	SET_OP(vctx, drv_set_legacy_xrc);
-	SET_OP(ctx, flush_relaxed_mr);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(vctx, free_dm);
 	SET_OP(vctx, get_srq_num);
 	SET_OP(vctx, modify_cq);
@@ -662,12 +644,19 @@ void verbs_set_ops(struct verbs_context *vctx,
 	SET_OP(vctx, read_counters);
 	SET_OP(vctx, reg_dm_mr);
 	SET_OP(ctx, reg_mr);
-#ifndef WITHOUT_ORACLE_EXTENSIONS
-	SET_OP(ctx, reg_mr_relaxed);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	SET_OP(ctx, req_notify_cq);
 	SET_OP(ctx, rereg_mr);
 	SET_OP(ctx, resize_cq);
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	SET_OP(ctx_oracle, alloc_shpd);
+	SET_OP(ctx_oracle, share_pd);
+	SET_OP(ctx_oracle, reg_mr_relaxed);
+	SET_OP(ctx_oracle, dereg_mr_relaxed);
+	SET_OP(ctx_oracle, flush_relaxed_mr);
+	SET_OP(ctx_oracle, drv_get_legacy_xrc);
+	SET_OP(ctx_oracle, drv_set_legacy_xrc);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #undef SET_OP
 #undef SET_OP2

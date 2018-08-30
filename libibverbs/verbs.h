@@ -1773,7 +1773,15 @@ struct ibv_context_ops {
 	int			(*detach_mcast)(struct ibv_qp *qp, const union ibv_gid *gid,
 						uint16_t lid);
 	void			(*async_event)(struct ibv_async_event *event);
+};
+
 #ifndef WITHOUT_ORACLE_EXTENSIONS
+
+/*
+ * Please read the "Oracle compatibility note" below.
+ */
+
+struct ibv_context_ops_oracle {
 	struct ibv_shpd *	(*alloc_shpd)(struct ibv_pd *pd, uint64_t share_key, struct ibv_shpd *shpd);
 	struct ibv_pd *		(*share_pd)(struct ibv_context *context, struct ibv_shpd *shpd, uint64_t share_key);
 	struct ibv_mr *         (*reg_mr_relaxed)(struct ibv_pd *pd,
@@ -1781,8 +1789,17 @@ struct ibv_context_ops {
 						  int access);
 	int                     (*dereg_mr_relaxed)(struct ibv_mr *mr);
 	int                     (*flush_relaxed_mr)(struct ibv_pd *pd);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+	void *			(*drv_get_legacy_xrc)(struct ibv_srq *ibv_srq);
+	void			(*drv_set_legacy_xrc)(struct ibv_srq *ibv_srq, void *legacy_xrc);
 };
+
+#define ORACLE_VERBS_CONTEXT_SIZE	(offsetof(struct verbs_context, context.verbs_context_sz_compat_sentinel))
+
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+
+#define ORACLE_VERBS_CONTEXT_SIZE	(sizeof(struct verbs_context))
+
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
 
 struct ibv_context {
 	struct ibv_device      *device;
@@ -1792,6 +1809,11 @@ struct ibv_context {
 	int			num_comp_vectors;
 	pthread_mutex_t		mutex;
 	void		       *abi_compat;
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+	uint8_t			verbs_context_sz_compat_sentinel[0];
+	struct ibv_context_ops_oracle	ops_oracle;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 };
 
 enum ibv_cq_init_attr_mask {
@@ -1866,6 +1888,30 @@ struct ibv_values_ex {
 	struct timespec raw_clock;
 };
 
+/*
+ * Oracle compatibility note:
+ *
+ * In UEK4's version of "struct verbs_context", callbacks "drv_set_legacy_xrc" (offset -104)
+ * and "drv_get_legacy_xrc (offset -112) were added at offsets conflicting
+ * with upstream "query_device_ex" (offset -104) and "priv" (offset -112) respectively.
+ *
+ * This obviously leads to incompatibility with inline use of said fields.
+ * Furthermore, "struct ibv_context_op" contained Oracle specific callbacks,
+ * leading to the structure layout of "struct ibv_context" to be incompatible with
+ * upstream as well.
+ *
+ * What that did though is shift the offset of "abi_compat" by the amount of space
+ * those extra callbacks take upwards:
+ * Upstream versions of "verbs.h" have field "abi_compat" located at offset 320 (LP64 ABI),
+ * while Oracle's version of "verbs.h" have the same field located at offset 360 (LP64 ABI).
+ * 5 extra function pointers taking up 8 bytes each.
+ * 
+ * We make the bold assumption that none of the Oracle ibverbs using applications made use
+ * of extended verbs, nor any of the fields following field "ops" of "struct ibv_context".
+ * So we simply live with the "abi_compat" and all other fields following "ops" having moved
+ * in an incompatible manner.
+ * 
+ */
 struct verbs_context {
 	/*  "grows up" - new fields go here */
 	int (*read_counters)(struct ibv_counters *counters,
@@ -1891,10 +1937,6 @@ struct verbs_context {
 							  struct ibv_flow_action_esp_attr *attr);
 	int (*modify_qp_rate_limit)(struct ibv_qp *qp,
 				    struct ibv_qp_rate_limit_attr *attr);
-#ifndef WITHOUT_ORACLE_EXTENSIONS
-	void * (*drv_get_legacy_xrc) (struct ibv_srq *ibv_srq);
-	void (*drv_set_legacy_xrc) (struct ibv_srq *ibv_srq, void *legacy_xrc);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 	struct ibv_pd *(*alloc_parent_domain)(struct ibv_context *context,
 					      struct ibv_parent_domain_init_attr *attr);
 	int (*dealloc_td)(struct ibv_td *td);
@@ -1952,7 +1994,7 @@ static inline struct verbs_context *verbs_get_ctx(struct ibv_context *ctx)
 
 #define verbs_get_ctx_op(ctx, op) ({ \
 	struct verbs_context *__vctx = verbs_get_ctx(ctx); \
-	(!__vctx || (__vctx->sz < sizeof(*__vctx) - offsetof(struct verbs_context, op)) || \
+	(!__vctx || (__vctx->sz < ORACLE_VERBS_CONTEXT_SIZE - offsetof(struct verbs_context, op)) || \
 	 !__vctx->op) ? NULL : __vctx; })
 
 /**
