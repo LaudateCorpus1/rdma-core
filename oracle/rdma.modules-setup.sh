@@ -11,16 +11,19 @@ depends() {
 }
 
 install() {
-	inst /etc/rdma/rdma.conf
 	inst /etc/rdma/mlx4.conf
 	inst /etc/rdma/sriov-vfs
-	inst /usr/libexec/rdma-init-kernel
+	inst /etc/rdma/modules/rdma.conf
+	inst /etc/rdma/modules/infiniband.conf
 	inst /usr/libexec/mlx4-setup.sh
 	inst /usr/libexec/rdma-set-sriov-vf
 	inst /usr/lib/modprobe.d/libmlx4.conf
+	inst /usr/lib/systemd/system/rdma-hw.target
+	inst /usr/lib/systemd/system/rdma-load-modules@.service
+	inst /usr/lib/systemd/system/rdma-sriov.service
 	inst_multiple lspci setpci awk sleep
 	inst_multiple -o /etc/modprobe.d/mlx4.conf
-	inst_rules 98-rdma.rules 70-persistent-ipoib.rules
+	inst_rules 70-persistent-ipoib.rules 75-rdma-description.rules 90-rdma-hw-modules.rules 90-rdma-ulp-modules.rules 90-rdma-umad.rules
 }
 
 installkernel() {
