@@ -1,0 +1,15 @@
+ACTION=="remove", GOTO="rds_sysctl_end"
+
+# Automatically load kernel tunings for RDS when the module is loaded.
+
+# This works in conjunction with /etc/sysctl.conf or /etc/sysctl.d/rds.conf or
+# any other valid configuration file with net.rds.* settings.
+
+ACTION=="add", SUBSYSTEM=="module", KERNEL=="rds", \
+      RUN+="/usr/lib/systemd/systemd-sysctl --prefix=/net/rds"
+ACTION=="add", SUBSYSTEM=="module", KERNEL=="rds_rdma", \
+      RUN+="/usr/lib/systemd/systemd-sysctl --prefix=/net/rds"
+ACTION=="add", SUBSYSTEM=="module", KERNEL=="rds_tcp", \
+      RUN+="/usr/lib/systemd/systemd-sysctl --prefix=/net/rds"
+
+LABEL="rds_sysctl_end"
