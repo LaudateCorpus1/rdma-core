@@ -619,6 +619,7 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
 - oracle/spec: Load sysctl settings for RDS (Aron Silverton) [Orabug: 28667038]
 - oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
+- oracle: Disable loading NFS over RDMA (Aron Silverton) [Orabug: 28667412]
 
 * Tue Sep 11 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
 - spec: Cleanup and update to upstream kernel boot framework (Aron Silverton) [Orabug: 28394710]
