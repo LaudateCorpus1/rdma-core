@@ -2,10 +2,10 @@
 
 # These modules are loaded by the system if any RDMA devices is installed
 # iSCSI over RDMA client support
-ib_iser
+#ib_iser
 
 # iSCSI over RDMA target support
-# ib_isert
+#ib_isert
 
 # User access to RDMA verbs (supports libibverbs)
 ib_uverbs
