@@ -605,3 +605,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle: Package for Oracle (Aron Silverton) [Orabug: 29356186]
 - oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
 - oracle/spec: Load sysctl settings for RDS (Aron Silverton) [Orabug: 28667038]
+- oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
