@@ -17,7 +17,7 @@ rdma_ucm
 rds_rdma
 
 # NFS over RDMA client support
-xprtrdma
+#xprtrdma
 
 # NFS over RDMA server support
-svcrdma
+#svcrdma
