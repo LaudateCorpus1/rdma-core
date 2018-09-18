@@ -614,3 +614,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle/spec: Install pkgconfig files for libs (Aron Silverton) [Orabug: 29410510]
 - oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
 - oracle/spec: Load sysctl settings for RDS (Aron Silverton) [Orabug: 28667038]
+- oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
