@@ -1,0 +1,11 @@
+# kernel tuning for RDS
+#
+# These settings are processed during boot by systemd-sysctl.service
+# and are also processed when hot-plug/modprobe causes RDS modules to
+# be loaded post-boot.
+
+# Orabug: 28338460 - Workaround for Exadata Cell Servers
+# 
+# Uncomment as needed
+#net.rds.ib.max_recv_wr = 256    # default = 1024
+#net.rds.ib.max_send_wr = 128    # default = 256
