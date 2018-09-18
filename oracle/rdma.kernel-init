@@ -23,8 +23,14 @@ if [ -f $CONFIG ]; then
 	LOAD_ULP_MODULES="resilient_rdmaip"
     fi
 
-    if [ "${RDS_LOAD}" == "yes" ]; then
-	LOAD_ULP_MODULES="$LOAD_ULP_MODULES rds rds_rdma rds_tcp"
+    if [ "${RDS_LOAD}" == "yes" -a -f /lib/modules/`uname -r`/kernel/net/rds/rds.ko ]; then
+	LOAD_ULP_MODULES="$LOAD_ULP_MODULES rds"
+	if [ -f /lib/modules/`uname -r`/kernel/net/rds/rds_tcp.ko ]; then
+	    LOAD_ULP_MODULES="$LOAD_ULP_MODULES rds_tcp"
+	fi
+	if [ -f /lib/modules/`uname -r`/kernel/net/rds/rds_rdma.ko ]; then
+	    LOAD_ULP_MODULES="$LOAD_ULP_MODULES rds_rdma"
+	fi
     fi
 
     if [ "${SRP_LOAD}" == "yes" ]; then
