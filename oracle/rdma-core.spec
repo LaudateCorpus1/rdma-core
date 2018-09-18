@@ -370,6 +370,16 @@ install -D -m0755 oracle/rdma.mlx4-setup.sh %{buildroot}%{_libexecdir}/mlx4-setu
 # Dracut file for IB support during boot
 install -D -m0755 oracle/rdma.modules-setup.sh %{buildroot}%{dracutlibdir}/modules.d/05rdma/module-setup.sh
 
+#
+# Oracle Virtual OS (VOS) configuration
+#
+
+# Remove upstream /etc/rdma/modules/rdma.conf and replace with our own to load RDS
+rm -f %{buildroot}%{_sysconfdir}/rdma/modules/rdma.conf
+install -D -m0644 oracle/modules.rdma-conf %{buildroot}%{_sysconfdir}/rdma/modules/rdma.conf
+
+# END Oracle Virtual OS (VOS) configuration
+
 # ibacm
 bin/ib_acme -D . -O
 # multi-lib conflict resolution hacks (bug 1429362)
@@ -596,6 +606,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 * Tue Oct 02 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
 - libibverbs: Add additional "#ifndef WITHOUT_ORACLE_EXTENSIONS" markers (Gerd Rausch) [Orabug: 28144657]
 - libibverbs: Add upstream & old Oracle-ABI compatibility (Gerd Rausch) [Orabug: 28144657] 
+
+* Tue Sep 18 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+- oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
 
 * Tue Sep 11 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
 - spec: Cleanup and update to upstream kernel boot framework (Aron Silverton) [Orabug: 28394710]
