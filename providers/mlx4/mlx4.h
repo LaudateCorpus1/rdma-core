@@ -343,7 +343,7 @@ struct ibv_mr *mlx4_reg_mr(struct ibv_pd *pd, void *addr,
 			    size_t length, int access);
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 struct ibv_mr *mlx4_reg_mr_relaxed(struct ibv_pd *pd, void *addr,
-				   size_t length, enum ibv_access_flags access);
+				   size_t length, int access); 
 #endif
 int mlx4_rereg_mr(struct ibv_mr *mr, int flags, struct ibv_pd *pd,
 		  void *addr, size_t length, int access);
