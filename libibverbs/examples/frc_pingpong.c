@@ -194,13 +194,12 @@ static struct pingpong_dest *pp_client_exch_dest(const char *servername, int por
 		goto out;
 	}
 
-	if (read(sockfd, msg, sizeof msg) != sizeof msg) {
-		perror("client read");
-		fprintf(stderr, "Couldn't read remote address\n");
+	if (read(sockfd, msg, sizeof msg) != sizeof msg ||
+	    write(sockfd, "done", sizeof "done") != sizeof "done") {
+		perror("client read/write");
+		fprintf(stderr, "Couldn't read/write remote address\n");
 		goto out;
 	}
-
-	write(sockfd, "done", sizeof "done");
 
 	rem_dest = malloc(sizeof *rem_dest);
 	if (!rem_dest)
@@ -298,14 +297,13 @@ static struct pingpong_dest *pp_server_exch_dest(struct pingpong_context *ctx,
 
 	gid_to_wire_gid(&my_dest->gid, gid);
 	sprintf(msg, "%04x:%06x:%06x:%s", my_dest->lid, my_dest->qpn, my_dest->psn, gid);
-	if (write(connfd, msg, sizeof msg) != sizeof msg) {
-		fprintf(stderr, "Couldn't send local address\n");
+	if (write(connfd, msg, sizeof msg) != sizeof msg ||
+	    read(connfd, msg, sizeof msg) != sizeof "done") {
+		fprintf(stderr, "Couldn't send/recv local address\n");
 		free(rem_dest);
 		rem_dest = NULL;
 		goto out;
 	}
-
-	read(connfd, msg, sizeof msg);
 
 out:
 	close(connfd);
@@ -370,7 +368,7 @@ s_retry:
 		fprintf(stderr, "Couldn't register MR\n");
 		return NULL;
 	}
-	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %lu , access = %x\n",
+	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %d, access = %x\n",
 		ctx->smr[0]->lkey, ctx->smr[0]->rkey, ctx->sbuf, size,
 		IBV_ACCESS_LOCAL_WRITE);
 
@@ -386,7 +384,7 @@ retry:
 		fprintf(stderr, "Couldn't register MR\n");
 		return NULL;
 	}
-	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %lu , access = %x\n",
+	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %d, access = %x\n",
 		ctx->rmr[0]->lkey, ctx->rmr[0]->rkey, ctx->rbuf, size,
 		IBV_ACCESS_LOCAL_WRITE);
 
@@ -438,7 +436,7 @@ retry:
 	return ctx;
 }
 
-int pp_close_ctx(struct pingpong_context *ctx)
+static int pp_close_ctx(struct pingpong_context *ctx)
 {
 	int i = 0;
 	if (ibv_destroy_qp(ctx->qp)) {
@@ -514,7 +512,7 @@ static int pp_post_recv(struct pingpong_context *ctx, int n)
 	}
 retry:
 	ctx->rmr[roffset]= ibv_reg_mr_relaxed(ctx->pd, ctx->rbuf + roffset*ctx->size,
-						ctx->size , IBV_ACCESS_LOCAL_WRITE);
+						ctx->size, IBV_ACCESS_LOCAL_WRITE);
 	if (!ctx->rmr[roffset]) {
 		mr_calls_failed++;
 		if (errno == EAGAIN) {
@@ -628,7 +626,7 @@ int main(int argc, char *argv[])
 	int                      rx_depth = 200;
 	int                      iters = 1000;
 	int                      use_event = 0;
-	int                      routs;
+	int                      routs = 0;
 	int                      rcnt, scnt;
 	int                      num_cq_events = 0;
 	int                      sl = 0;
@@ -935,7 +933,7 @@ int main(int argc, char *argv[])
 		printf("%d iters in %.2f seconds = %.2f usec/iter\n",
 		       iters, usec / 1000000., usec / iters);
 	}
-		printf(" %lld reg_mrs failed\n", mr_calls_failed);
+	printf(" %ld reg_mrs failed\n", mr_calls_failed);
 
 	ibv_ack_cq_events(ctx->cq, num_cq_events);
 
