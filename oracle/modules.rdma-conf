@@ -21,3 +21,6 @@ rds_rdma
 
 # NFS over RDMA server support
 #svcrdma
+
+# Resilient RDMA IP for active bonding
+resilient_rdmaip

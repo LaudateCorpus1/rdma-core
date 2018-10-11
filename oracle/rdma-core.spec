@@ -611,6 +611,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Thu Oct 11 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+- oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
+
 * Tue Oct 02 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
 - libibverbs: Add additional "#ifndef WITHOUT_ORACLE_EXTENSIONS" markers (Gerd Rausch) [Orabug: 28144657]
 - libibverbs: Add upstream & old Oracle-ABI compatibility (Gerd Rausch) [Orabug: 28144657] 
