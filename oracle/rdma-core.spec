@@ -616,3 +616,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - oracle/spec: Load sysctl settings for RDS (Aron Silverton) [Orabug: 28667038]
 - oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
 - oracle: Disable loading NFS over RDMA (Aron Silverton) [Orabug: 28667412]
+- oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
