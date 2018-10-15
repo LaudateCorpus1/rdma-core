@@ -590,6 +590,46 @@ typedef struct orcl_uek2_ctx_s {
 	} v;
 } orcl_uek2_ctx_t;
 
+/*
+ * We need to override above 'qp_type' setting and the 'ps' passed
+ * in some cases.
+ *
+ * Oracle UEK2 XRC API usage requires special code and private
+ * handshake (using env variable) to be able to distinguish an XRC
+ * send and receive side qp (details below).
+ *
+ * In  this upstream version librdmacm, XRC (SEND* and RECV) cmids
+ * can be created only with PS_IB. However, rdma_create_id()
+ * doesn’t provide a way to create XRC cmid (can’t discriminate
+ * between XRC_SEND/RECV) while creating cmid(s).
+ *
+ * This is a gap in librdmacm XRC support. Oracle UEK2 compatible
+ * app sets the env variable “ORCL_UEK2_XRC_COMPAT_MODE” and has
+ * hints to discriminate between XRC_SEND and XRC_RECV through ‘context’
+ * which we use to implement binary compatibility to UEK2 XRC library
+ * apps.
+ */
+static void rdma_process_oracle_uek2_ctx(void *context, enum rdma_port_space *ps,
+				         enum ibv_qp_type *qp_type)
+{
+	orcl_uek2_ctx_t uek2_ctx;
+
+	if (getenv("ORCL_UEK2_XRC_COMPAT_MODE") &&
+	    (*ps == RDMA_PS_TCP) && context) {
+		/* UEK2 XRC binary compat needed */
+
+		memcpy(&uek2_ctx, &context, sizeof uek2_ctx);
+		if (ORCL_UEK2_CTX_XRC_RECV == uek2_ctx.v.s.val_firstbitfield) {
+			/* qp_type xrc_recv */
+			*qp_type = IBV_QPT_XRC_RECV;
+			*ps = RDMA_PS_IB;
+		} else if (ORCL_UEK2_CTX_XRC_SEND == uek2_ctx.v.s.val_firstbitfield) {
+			/* qp_type xrc_send */
+			*qp_type = IBV_QPT_XRC_SEND;
+			*ps = RDMA_PS_IB;
+		}
+	}
+}
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 int rdma_create_id(struct rdma_event_channel *channel,
@@ -602,48 +642,7 @@ int rdma_create_id(struct rdma_event_channel *channel,
 		  IBV_QPT_UD : IBV_QPT_RC;
 
 #ifndef WITHOUT_ORACLE_EXTENSIONS
-	/*
-	 * We need to override above 'qp_type' setting
-	 * and the 'ps' passed in some cases.
-	 *
-	 * Oracle UEK2 XRC API usage requires
-	 * special code and private handshake (using env
-	 * variable) to be able to distinguish an XRC
-	 * send and receive side qp (details below).
-	 *
-	 * In  this upstream version librdmacm,
-	 * XRC (SEND* and RECV) cmids can be created
-	 * only with PS_IB. However, rdma_create_id()
-	 * doesn’t provide a way to create XRC cmid
-	 * (can’t discriminate between XRC_SEND/RECV)
-	 * while creating cmid(s).
-	 *
-	 * This is a gap in librdmacm XRC support. Oracle
-	 * UEK2 compatible app sets the env variable
-	 * “ORCL_UEK2_XRC_COMPAT_MODE” and has hints
-	 * to discriminate between XRC_SEND and XRC_RECV
-	 * through ‘context’ which we use to implement
-	 * binary compatibility to UEK2 XRC library
-	 * apps.
-	 */
-	if (getenv("ORCL_UEK2_XRC_COMPAT_MODE") &&
-	    (ps == RDMA_PS_TCP) && context) {
-		/* UEK2 XRC binary compat needed */
-
-		if (ORCL_UEK2_CTX_XRC_RECV ==
-		    (((orcl_uek2_ctx_t *)
-		      (&context))->v.s.val_firstbitfield)) {
-			/* qp_type xrc_recv */
-			qp_type = IBV_QPT_XRC_RECV;
-			ps = RDMA_PS_IB;
-		} else if (ORCL_UEK2_CTX_XRC_SEND ==
-			   (((orcl_uek2_ctx_t *)
-			     (&context))->v.s.val_firstbitfield)) {
-			/* qp_type xrc_send */
-			qp_type = IBV_QPT_XRC_SEND;
-			ps = RDMA_PS_IB;
-		}
-	}
+	rdma_process_oracle_uek2_ctx(context, &ps, &qp_type);
 #endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 	return rdma_create_id2(channel, id, context, ps, qp_type);
