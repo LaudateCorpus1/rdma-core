@@ -606,6 +606,18 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 - libibverbs: Fix compiler warnings in examples/frc_pingpong.c (Mark Haywood) [Orabug: 28769907]
 - librdmacm: Fix compiler warnings in librdmacm/cma.c (Mark Haywood) [Orabug: 28794664]
 - libibverbs: Fix compiler warnings in examples/shpd_pingpong.c (Mark Haywood) [Orabug: 28802228]
+- ibacm: Log using RCF3339 timestamps (Matt Ezell) [Orabug: 29037074]
+- ibacm: remove endpoint IP address from provider when address deleted (Mark Haywood) [Orabug: 28845883]
+- ibacm: Check return value when deleting a cache entry (Håkon Bugge) [Orabug: 29037101]
+- ibacm: Flush cache in provider when local address is removed (Håkon Bugge) [Orabug: 29037124]
+- ibacm: Remove trailing blanks (Håkon Bugge) [Orabug: 29037144]
+- ibacm: Fix proper return value from ib_acme (Håkon Bugge) [Orabug: 29037153]
+- ibacm: Handle rereg event coming before link active event (Håkon Bugge) [Orabug: 29037189]
+- ibacm: Use helper functions and existing defines to avoid literal use (Håkon Bugge) [Orabug: 29026611]
+- ibacm: Unable to assign EP name for limited pkey (Håkon Bugge) [Orabug: 29037216]
+- ibacm: Fix improper refcnt (Håkon Bugge) [Orabug: 29037237]
+- ibacm: Fix incorrect length used in address comparisons (Håkon Bugge) [Orabug: 29037253]
+- ibacm: Copy correct number of address bytes before calling provider (Håkon Bugge) [Orabug: 29037270]
 
 * Fri Nov 09 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.6
 - oracle/spec: Change "vos" to "ora" and update summaries and descriptions [Orabug: 29128747]
