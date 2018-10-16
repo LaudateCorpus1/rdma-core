@@ -601,6 +601,12 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Thu Dec 20 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+- libibverbs(libmlx4): Fix an incompatible pointer type compiler warning (Mark Haywood) [Orabug: 28769845]
+- libibverbs: Fix compiler warnings in examples/frc_pingpong.c (Mark Haywood) [Orabug: 28769907]
+- librdmacm: Fix compiler warnings in librdmacm/cma.c (Mark Haywood) [Orabug: 28794664]
+- libibverbs: Fix compiler warnings in examples/shpd_pingpong.c (Mark Haywood) [Orabug: 28802228]
+
 * Fri Nov 09 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.6
 - oracle/spec: Change "vos" to "ora" and update summaries and descriptions [Orabug: 29128747]
 
