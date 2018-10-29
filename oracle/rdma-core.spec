@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        17.1
-Release:        1.0.4%{?dist}%{?flavor}
+Release:        1.0.5%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle VOS)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -611,21 +611,15 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
-* Thu Oct 11 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
-- oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
-
-* Tue Oct 02 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+* Mon Oct 29 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.5
 - libibverbs: Add additional "#ifndef WITHOUT_ORACLE_EXTENSIONS" markers (Gerd Rausch) [Orabug: 28144657]
 - libibverbs: Add upstream & old Oracle-ABI compatibility (Gerd Rausch) [Orabug: 28144657] 
-
-* Tue Sep 18 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+- oracle/spec: Cleanup and update to upstream kernel boot framework (Aron Silverton) [Orabug: 28394710]
 - oracle/spec: Load RDS kernel modules using hot-plug (Aron Silverton) [Orabug: 28667038]
 - oracle/spec: Load sysctl settings for RDS (Aron Silverton) [Orabug: 28667038]
 - oracle: Disable loading ib_iser (Aron Silverton) [Orabug: 28188517]
 - oracle: Disable loading NFS over RDMA (Aron Silverton) [Orabug: 28667412]
-
-* Tue Sep 11 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
-- spec: Cleanup and update to upstream kernel boot framework (Aron Silverton) [Orabug: 28394710]
+- oracle: Load RDMAIP kernel module using hot-plug (Aron Silverton) [Orabug: 28782057]
 
 * Mon Aug 27 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.4
 - spec: Use Ninja (ninja-build) for building (Aron Silverton) [Orabug: 28305731]
