@@ -355,6 +355,21 @@ fill_attr_out(struct ibv_command_buffer *cmd, uint16_t attr_id, void *data,
 #define fill_attr_out_ptr(cmd, attr_id, ptr)                                 \
 	fill_attr_out(cmd, attr_id, ptr, sizeof(*(ptr)))
 
+/* If size*nelems overflows size_t this returns SIZE_MAX */
+static inline size_t _array_len(size_t size, size_t nelems)
+{
+	if (size != 0 &&
+	    SIZE_MAX / size <= nelems)
+		return SIZE_MAX;
+	return size * nelems;
+}
+
+#define fill_attr_out_ptr_array(cmd, attr_id, ptr, nelems)                     \
+	fill_attr_out(cmd, attr_id, ptr, _array_len(sizeof(*ptr), nelems))
+
+#define fill_attr_in_ptr_array(cmd, attr_id, ptr, nelems)                       \
+	fill_attr_in(cmd, attr_id, ptr, _array_len(sizeof(*ptr), nelems))
+
 static inline size_t __check_divide(size_t val, unsigned int div)
 {
 	assert(val % div == 0);
