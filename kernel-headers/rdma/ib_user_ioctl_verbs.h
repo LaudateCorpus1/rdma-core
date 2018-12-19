@@ -99,4 +99,18 @@ struct ib_uverbs_flow_action_esp {
 	__aligned_u64	hard_limit_pkts;
 };
 
+enum ib_uverbs_read_counters_flags {
+	/* prefer read values from driver cache */
+	IB_UVERBS_READ_COUNTERS_PREFER_CACHED = 1 << 0,
+};
+
+enum ib_uverbs_advise_mr_advice {
+	IB_UVERBS_ADVISE_MR_ADVICE_PREFETCH,
+	IB_UVERBS_ADVISE_MR_ADVICE_PREFETCH_WRITE,
+};
+
+enum ib_uverbs_advise_mr_flag {
+	IB_UVERBS_ADVISE_MR_FLAG_FLUSH = 1 << 0,
+};
+
 #endif
