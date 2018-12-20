@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        17.1
-Release:        1.0.5%{?dist}%{?flavor}
+Release:        1.0.6%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -601,7 +601,7 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
-* Fri Nov 09 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1
+* Fri Nov 09 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.6
 - oracle/spec: Change "vos" to "ora" and update summaries and descriptions [Orabug: 29128747]
 
 * Mon Oct 29 2018 Aron Silverton <aron.silverton@oracle.com> - 5:17.1-1.0.5
