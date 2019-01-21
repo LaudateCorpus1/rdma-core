@@ -564,7 +564,10 @@ add_subdirectory(providers/rxe)
 add_subdirectory(providers/rxe/man)
 
 # Binaries
-add_subdirectory(ibacm) # NO SPARSE
+if (NOT NL_KIND EQUAL 0)
+  add_subdirectory(ibacm) # NO SPARSE
+endif()
+
 if (NOT NL_KIND EQUAL 0)
   add_subdirectory(iwpmd)
 endif()
