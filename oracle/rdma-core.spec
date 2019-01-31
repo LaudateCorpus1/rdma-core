@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1.0.1%{?dist}%{?flavor}
+Release:        1.0.2%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -609,6 +609,29 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Wed Mar 13 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.2
+- libibverbs(verbs,libmlx4,libmlx5): Add Shared PD (Mark Haywood) [Orabug: 21525110, 28036829]
+- libibverbs(verbs,libmlx4,libmlx5), librdmacm: Add XRC Compatibility Layer (Mark Haywood) [Orabug: 21616281, 28037506]
+- libibverbs(verbs,libmlx4,libmlx5): Add Userlevel FMR (Mark Haywood) [Orabug: 21525110, 26547698]
+- libibverbs(libmlx4): Conditionally disable blueflame (Mark Haywood) [Orabug: 25894415]
+- libibverbs: Detect uek_abi_version and UEK4 compatibility in libibverbs (Gerd Rausch) [Orabug: 28035740]
+- ibacm: remove endpoint IP address from provider when address deleted (Mark Haywood) [Orabug: 28845883]
+- ibacm: Check return value when deleting a cache entry (Håkon Bugge) [Orabug: 29037101]
+- ibacm: Flush cache in provider when local address is removed (Håkon Bugge) [Orabug: 29037124]
+- ibacm: Remove trailing blanks (Håkon Bugge) [Orabug: 29037144]
+- ibacm: Fix proper return value from ib_acme (Håkon Bugge) [Orabug: 29037153]
+- ibacm: Handle rereg event coming before link active event (Håkon Bugge) [Orabug: 29037189]
+- ibacm: Use helper functions and existing defines to avoid literal use (Håkon Bugge) [Orabug: 29026611]
+- ibacm: Unable to assign EP name for limited pkey (Håkon Bugge) [Orabug: 29037216]
+- ibacm: Fix improper refcnt (Håkon Bugge) [Orabug: 29037237]
+- ibacm: Fix incorrect length used in address comparisons (Håkon Bugge) [Orabug: 29037253]
+- ibacm: Copy correct number of address bytes before calling provider (Håkon Bugge) [Orabug: 29037270]
+- libibverbs(verbs,libmlx5), kernel-headers: Backport ODP MR Pre-fetch userspace patches (Mark Haywood) [Orabug: 29180408]
+- libibverbs: shpd_pingpong.c ought to be WITHOUT_ORACLE_EXTENSIONS aware (Mark Haywood) [Orabug: 29437535]
+- libibverbs: frc_pingpong.c ought to be WITHOUT_ORACLE_EXTENSIONS aware (Mark Haywood) [Orabug: 29437422]
+- libibverbs: convert SHPD struct fields from __u64 to __aligned_64 (Mark Haywood) [Orabug: 29460706]
+- libibverbs(libmlx4): extern of mlx4_trace should be Oracle only (Mark Haywood) [Orabug: 29480888]
+
 * Tue Feb 26 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.1
 - oracle: Package for Oracle (Aron Silverton) [Orabug: 29410510]
 - oracle/spec: Install pkgconfig files for libs (Aron Silverton) [Orabug: 29410510]
