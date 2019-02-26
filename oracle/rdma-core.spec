@@ -466,6 +466,7 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %{_includedir}/infiniband/*
 %{_includedir}/rdma/*
 %{_libdir}/lib*.so
+%{_libdir}/pkgconfig/*.pc
 %{_mandir}/man3/ibv_*
 %{_mandir}/man3/rdma*
 %{_mandir}/man3/umad*
@@ -593,3 +594,4 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %changelog
 * Tue Feb 26 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2
 - oracle: Package for Oracle (Aron Silverton) [Orabug: 29410510]
+- oracle/spec: Install pkgconfig files for libs (Aron Silverton) [Orabug: 29410510]
