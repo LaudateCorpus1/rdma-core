@@ -40,6 +40,7 @@ BuildRequires:  valgrind-devel
 %endif
 
 Requires:       dracut
+Requires:       initscripts
 Requires:       kmod
 Requires:       pciutils
 Requires:       systemd
@@ -338,6 +339,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/rdma
 %global dracutlibdir %{_prefix}/%{oldlib}/dracut
 %global sysmodprobedir %{_prefix}/%{oldlib}/modprobe.d
 
+mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig/network-scripts
 mkdir -p %{buildroot}%{_sysconfdir}/udev/rules.d
 mkdir -p %{buildroot}%{_libexecdir}
 mkdir -p %{buildroot}%{_udevrulesdir}
@@ -345,6 +347,10 @@ mkdir -p %{buildroot}%{dracutlibdir}/modules.d/05rdma
 mkdir -p %{buildroot}%{sysmodprobedir}
 mkdir -p %{buildroot}%{_unitdir}
 mkdir -p %{buildroot}%{_sysconfdir}/sysctl.d
+
+# IPoIB - We need to configure IPoIB interfaces
+install -D -m0755 oracle/rdma.ifdown-ib %{buildroot}/%{_sysconfdir}/sysconfig/network-scripts/ifdown-ib
+install -D -m0755 oracle/rdma.ifup-ib %{buildroot}/%{_sysconfdir}/sysconfig/network-scripts/ifup-ib
 
 # SRIOV - Suse has an SRIOV service, check if we need/want it
 install -D -m0644 oracle/rdma.sriov-vfs %{buildroot}/%{_sysconfdir}/rdma/sriov-vfs
@@ -460,6 +466,7 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %{_udevrulesdir}/90-rdma-umad.rules
 %{_udevrulesdir}/98-rdma-sriov.rules
 # Consider replacing above with {_udevrulesdir}/*
+%{_sysconfdir}/sysconfig/network-scripts/*
 %{_sysconfdir}/udev/rules.d/99-rds-sysctl-parameters.rules
 %{_libexecdir}/rdma-set-sriov-vf
 %{_libexecdir}/truescale-serdes.cmds
@@ -601,6 +608,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Wed Feb 27 2019 Aron Silverton <aron.silverton@oracle.com> - 5:19.2
+- Add IPoIB interface configuration scripts (Aron Silverton) [Orabug: 29307270]
+
 * Wed Feb 20 2019 Aron Silverton <aron.silverton@oracle.com> - 5:19.2-1.0.2
 - libibverbs(verbs,libmlx4,libmlx5): Add Shared PD (Mark Haywood) [Orabug: 21525110, 28036829]
 - libibverbs(verbs,libmlx4,libmlx5), librdmacm: Add Compatibility Layer (Mark Haywood) [Orabug: 21616281, 28037506]
