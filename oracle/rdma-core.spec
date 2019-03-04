@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        19.2
-Release:        1.0.2%{?dist}%{?flavor}
+Release:        1.0.3%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -608,8 +608,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
-* Wed Feb 27 2019 Aron Silverton <aron.silverton@oracle.com> - 5:19.2
+* Mon Mar 04 2019 Aron Silverton <aron.silverton@oracle.com> - 5:19.2-1.0.3
 - Add IPoIB interface configuration scripts (Aron Silverton) [Orabug: 29307270]
+- Backport ODP MR Pre-fetch userspace patches (Mark Haywood) [Orabug: 29180408]
 
 * Wed Feb 20 2019 Aron Silverton <aron.silverton@oracle.com> - 5:19.2-1.0.2
 - libibverbs(verbs,libmlx4,libmlx5): Add Shared PD (Mark Haywood) [Orabug: 21525110, 28036829]
