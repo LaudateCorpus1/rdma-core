@@ -33,6 +33,8 @@
 #define _GNU_SOURCE
 #include <config.h>
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -945,3 +947,15 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+#else /* WITHOUT_ORACLE_EXTENSIONS */
+
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+	fprintf(stderr, "%s is not supported when compiled without Oracle extensions.\n", argv[0]);
+	return 1;
+}
+
+#endif /* WITHOUT_ORACLE_EXTENSIONS */
