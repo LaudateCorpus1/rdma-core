@@ -138,7 +138,7 @@ enum {
  * that they pack the same way on 32-bit and 64-bit architectures (to
  * avoid incompatibility between 32-bit userspace and 64-bit kernels).
  * Specifically:
- *  - Do not use pointer types -- pass pointers in __u64 instead.
+ *  - Do not use pointer types -- pass pointers in __aligned_64 instead.
  *  - Make sure that any structure larger than 4 bytes is padded to a
  *    multiple of 8 bytes.  Otherwise the structure size will be
  *    different between 32-bit and 64-bit architectures.
@@ -347,11 +347,11 @@ struct ib_uverbs_dealloc_pd {
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 
 struct ib_uverbs_alloc_shpd {
-	__u64 response;
+	__aligned_u64 response;
 	__u32 pd_handle;
 	__u32 reserved;
-	__u64 share_key;
-	__u64 driver_data[0];
+	__aligned_u64 share_key;
+	__aligned_u64 driver_data[0];
 };
 
 struct ib_uverbs_alloc_shpd_resp {
@@ -359,11 +359,11 @@ struct ib_uverbs_alloc_shpd_resp {
 };
 
 struct ib_uverbs_share_pd {
-	__u64 response;
+	__aligned_u64 response;
 	__u32 shpd_handle;
 	__u32 reserved;
-	__u64 share_key;
-	__u64 driver_data[0];
+	__aligned_u64 share_key;
+	__aligned_u64 driver_data[0];
 };
 
 struct ib_uverbs_share_pd_resp {
