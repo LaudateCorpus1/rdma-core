@@ -442,8 +442,8 @@ int mlx4_destroy_flow(struct ibv_flow *flow_id);
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 void *mlx4_get_legacy_xrc(struct ibv_srq *srq);
 void mlx4_set_legacy_xrc(struct ibv_srq *srq, void *legacy_xrc_srq);
-#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 extern int mlx4_trace;
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #endif /* MLX4_H */
