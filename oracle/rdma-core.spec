@@ -12,7 +12,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1.0.2%{?dist}%{?flavor}
+Release:        1.0.3%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -609,6 +609,22 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Tue Mar 26 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.3
+- ibacm: ACM_ADDRESS_NAME names missing terminating NULL character (Mark Haywood) [Orabug: 29114060]
+- ibacm: Remove trailing blanks in acm.h (Mark Haywood) [Orabug: 29181524]
+- ibacm: Remove dup defines and cleanup of hdr.data usage (Mark Haywood) [Orabug: 29181524]
+- ibacm: acme supports only one port (Mark Haywood) [Orabug: 29181524]
+- ibacm: Replace ioctl with netlink (Mark Haywood) [Orabug: 29171203]
+- ibacm: Print correct pkey (Mark Haywood) [Orabug: 29171203]
+- ibacm: Unable to resurrect an interface (Mark Haywood) [Orabug: 29171203]
+- ibacm: Use alias name when possible (Mark Haywood) [Orabug: 29171203]
+- ibacm: Introduce acm_log_once() (Mark Haywood) [Orabug: 29325276]
+- ibacm: Fix acm_log_once (Mark Haywood) [Orabug: 29325276]
+- ibacm: Log requests from kernel with unknown NL client ID (Mark Haywood) [Orabug: 29304867]
+- ibacm: Compare logical partitions instead of pkeys (Mark Haywood) [Orabug: 29127247]
+- ibacm: lower level of log message (Mark Haywood) [Orabug: 29127247]
+- libibverbs(verbs,libmlx5), kernel-headers: Backport ODP SRQ & XRC userspace patches (Mark Haywood) [Orabug: 29318356]
+
 * Wed Mar 13 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.2
 - libibverbs(verbs,libmlx4,libmlx5): Add Shared PD (Mark Haywood) [Orabug: 21525110, 28036829]
 - libibverbs(verbs,libmlx4,libmlx5), librdmacm: Add XRC Compatibility Layer (Mark Haywood) [Orabug: 21616281, 28037506]
