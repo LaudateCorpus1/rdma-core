@@ -329,7 +329,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 	ctx->sbuf = memalign(page_size, size * MAX_QUEUELEN);
 	if (!ctx->rbuf || !ctx->sbuf) {
 		fprintf(stderr, "Couldn't allocate work buf.\n");
-		return NULL;
+		goto clean_ctx;
 	}
 
 	memset(ctx->sbuf, 0x7b + is_server, size * 2);
@@ -340,22 +340,21 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 	if (!ctx->context) {
 		fprintf(stderr, "Couldn't get context for %s\n",
 			ibv_get_device_name(ib_dev));
-		return NULL;
+		goto clean_ctx;
 	}
 
 	if (use_event) {
 		ctx->channel = ibv_create_comp_channel(ctx->context);
 		if (!ctx->channel) {
 			fprintf(stderr, "Couldn't create completion channel\n");
-			return NULL;
+			goto clean_device;
 		}
-	} else
-		ctx->channel = NULL;
+	}
 
 	ctx->pd = ibv_alloc_pd(ctx->context);
 	if (!ctx->pd) {
 		fprintf(stderr, "Couldn't allocate PD\n");
-		return NULL;
+		goto clean_comp_channel;
 	}
 
 s_retry:
@@ -368,7 +367,7 @@ s_retry:
 			goto s_retry;
 		}
 		fprintf(stderr, "Couldn't register MR\n");
-		return NULL;
+		goto clean_pd;
 	}
 	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %d, access = %x\n",
 		ctx->smr[0]->lkey, ctx->smr[0]->rkey, ctx->sbuf, size,
@@ -384,7 +383,7 @@ retry:
 			goto retry;
 		}
 		fprintf(stderr, "Couldn't register MR\n");
-		return NULL;
+		goto clean_mrs;
 	}
 	printf("fmr:lkey = %x, rkey = %x for start=%p, len = %d, access = %x\n",
 		ctx->rmr[0]->lkey, ctx->rmr[0]->rkey, ctx->rbuf, size,
@@ -394,7 +393,7 @@ retry:
 				ctx->channel, 0);
 	if (!ctx->cq) {
 		fprintf(stderr, "Couldn't create CQ\n");
-		return NULL;
+		goto clean_mrs;
 	}
 
 	{
@@ -413,7 +412,7 @@ retry:
 		ctx->qp = ibv_create_qp(ctx->pd, &attr);
 		if (!ctx->qp)  {
 			fprintf(stderr, "Couldn't create QP\n");
-			return NULL;
+			goto clean_cq;
 		}
 	}
 
@@ -431,11 +430,40 @@ retry:
 				  IBV_QP_PORT               |
 				  IBV_QP_ACCESS_FLAGS)) {
 			fprintf(stderr, "Failed to modify QP to INIT\n");
-			return NULL;
+			goto clean_qp;
 		}
 	}
 
 	return ctx;
+
+clean_qp:
+	ibv_destroy_qp(ctx->qp);
+
+clean_cq:
+	ibv_destroy_cq(ctx->cq);
+
+clean_mrs:
+	if (ctx->rmr[0])
+		ibv_dereg_mr_relaxed(ctx->rmr[0]);
+	if (ctx->smr[0])
+		ibv_dereg_mr_relaxed(ctx->smr[0]);
+
+clean_pd:
+	ibv_dealloc_pd(ctx->pd);
+
+clean_comp_channel:
+	if (ctx->channel)
+		ibv_destroy_comp_channel(ctx->channel);
+
+clean_device:
+	ibv_close_device(ctx->context);
+
+clean_ctx:
+	free(ctx->rbuf);
+	free(ctx->sbuf);
+	free(ctx);
+
+	return NULL;
 }
 
 static int pp_close_ctx(struct pingpong_context *ctx)
