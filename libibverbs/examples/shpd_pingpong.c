@@ -399,35 +399,34 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 	if (!ctx->context) {
 		fprintf(stderr, "Couldn't get context for %s\n",
 			ibv_get_device_name(ib_dev));
-		return NULL;
+		goto clean_ctx;
 	}
 
 	if (use_event) {
 		ctx->channel = ibv_create_comp_channel(ctx->context);
 		if (!ctx->channel) {
 			fprintf(stderr, "Couldn't create completion channel\n");
-			return NULL;
+			goto clean_device;
 		}
-	} else
-		ctx->channel = NULL;
+	}
 
 	if (is_server) {
 		struct ibv_shpd *shpd;
 		ctx->pd = ibv_alloc_pd(ctx->context);
 		if (!ctx->pd) {
 			fprintf(stderr, "Couldn't allocate PD\n");
-			return NULL;
+			goto clean_comp_channel;
 		}
 
 		/* mark the pd as shareable & get shpd info */
 		shpd = ibv_alloc_shpd(ctx->pd, mypass, &ctx->shpd);
 		if (!shpd) {
 			fprintf(stderr, "Couldn't share PD : errno %d\n", errno);
-			return NULL;
+			goto clean_pd;
 		}
 
 		if (pp_setup_shm(ctx))
-			return NULL;
+			goto clean_pd;
 
 #define PAGE_ALIGN(addr, page) (uintptr_t)(((uintptr_t)addr + page - 1) \
 					 & ~(page - 1))
@@ -439,7 +438,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 		if (!ctx->mr) {
 			fprintf(stderr, "Couldn't register MR\n");
 			ctx->shm->status = 1;
-			return NULL;
+			goto clean_shm;
 		}
 
 		ctx->shm->shpd = ctx->shpd;
@@ -451,7 +450,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 	} else {
 		if (pp_waitfor_shm(ctx)) {
 			fprintf(stderr, "Couldn't get shm working\n");
-			return NULL;
+			goto clean_comp_channel;
 		}
 
 		ctx->shpd = ctx->shm->shpd;
@@ -459,9 +458,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 		ctx->pd = ibv_share_pd(ctx->context, &ctx->shpd, mypass);
 		if (ctx->pd == NULL) {
 			fprintf(stderr, "ibv_share_pd failed\n");
-			if (shmdt(ctx->shm))
-				fprintf(stderr, "Couldn't detach shm\n");
-			return NULL;
+			goto clean_shm;
 		}
 
 
@@ -485,7 +482,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 				ctx->channel, 0);
 	if (!ctx->cq) {
 		fprintf(stderr, "Couldn't create CQ\n");
-		return NULL;
+		goto clean_mr;
 	}
 
 	{
@@ -504,7 +501,7 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 		ctx->qp = ibv_create_qp(ctx->pd, &attr);
 		if (!ctx->qp)  {
 			fprintf(stderr, "Couldn't create QP\n");
-			return NULL;
+			goto clean_cq;
 		}
 	}
 
@@ -522,11 +519,41 @@ static struct pingpong_context *pp_init_ctx(struct ibv_device *ib_dev, int size,
 				  IBV_QP_PORT               |
 				  IBV_QP_ACCESS_FLAGS)) {
 			fprintf(stderr, "Failed to modify QP to INIT\n");
-			return NULL;
+			goto clean_qp;
 		}
 	}
 
 	return ctx;
+
+clean_qp:
+	ibv_destroy_qp(ctx->qp);
+
+clean_cq:
+	ibv_destroy_cq(ctx->cq);
+
+clean_mr:
+	if (ctx->is_server)
+		ibv_dereg_mr(ctx->mr);
+
+clean_shm:
+	if (pp_delete_shm(ctx))
+		fprintf(stderr, "couldn't destroy shared memory\n");
+
+clean_pd:
+	if (ctx->pd)
+		ibv_dealloc_pd(ctx->pd);
+
+clean_comp_channel:
+	if (ctx->channel)
+		ibv_destroy_comp_channel(ctx->channel);
+
+clean_device:
+	ibv_close_device(ctx->context);
+
+clean_ctx:
+	free(ctx);
+
+	return NULL;
 }
 
 static int pp_close_ctx(struct pingpong_context *ctx)
