@@ -113,7 +113,15 @@ IBVERBS_1.1 {
 
 IBVERBS_1.5 {
 	global:
+		ibv_close_xrc_domain;
+		ibv_create_xrc_rcv_qp;
+		ibv_create_xrc_srq;
 		ibv_get_pkey_index;
+		ibv_modify_xrc_rcv_qp;
+		ibv_open_xrc_domain;
+		ibv_query_xrc_rcv_qp;
+		ibv_reg_xrc_rcv_qp;
+		ibv_unreg_xrc_rcv_qp;
 } IBVERBS_1.1;
 
 /* If any symbols in this stanza change ABI then the entire staza gets a new symbol
@@ -194,12 +202,4 @@ IBVERBS_PRIVATE_@IBVERBS_PABI_VERSION@ {
 		verbs_uninit_context;
 		verbs_init_cq;
 		ibv_cmd_modify_cq;
-		ibv_open_xrc_domain;
-		ibv_create_xrc_srq;
-		ibv_close_xrc_domain;
-		ibv_create_xrc_rcv_qp;
-		ibv_modify_xrc_rcv_qp;
-		ibv_reg_xrc_rcv_qp;
-		ibv_unreg_xrc_rcv_qp;
-		ibv_query_xrc_rcv_qp;
 };

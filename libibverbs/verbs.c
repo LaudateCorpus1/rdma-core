@@ -1068,8 +1068,81 @@ free_resources:
 #ifndef WITHOUT_ORACLE_EXTENSIONS
 
 /* XRC compatibility layer */
-struct ibv_xrc_domain *ibv_open_xrc_domain(struct ibv_context *context,
-					   int fd, int oflag)
+static pthread_mutex_t xrc_tree_mutex = PTHREAD_MUTEX_INITIALIZER;
+static void *ibv_xrc_qp_tree;
+
+static int xrc_qp_compare(const void *a, const void *b)
+{
+
+	if ((*(uint32_t *) a) < (*(uint32_t *) b))
+		return -1;
+	else if ((*(uint32_t *) a) > (*(uint32_t *) b))
+		return 1;
+	else
+		return 0;
+}
+
+struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn)
+{
+	uint32_t **qpn_ptr;
+	struct ibv_qp *ibv_qp = NULL;
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tfind(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		goto end;
+
+	ibv_qp = container_of(*qpn_ptr, struct ibv_qp, qp_num);
+
+end:
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ibv_qp;
+}
+
+static int ibv_clear_xrc_qp(uint32_t qpn)
+{
+	uint32_t **qpn_ptr;
+	int ret = 0;
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tdelete(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		ret = EINVAL;
+
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ret;
+}
+
+static int ibv_store_xrc_qp(struct ibv_qp *qp)
+{
+	uint32_t **qpn_ptr;
+	int ret = 0;
+
+	if (ibv_find_xrc_qp(qp->qp_num)) {
+		/*
+		 * Set an error in case qpn alreday exists, not expected
+		 * to happen.
+		 */
+		fprintf(stderr, PFX "ibv_store_xrc_qp failed, qpn=%u is already stored\n",
+			qp->qp_num);
+		return EEXIST;
+	}
+
+	pthread_mutex_lock(&xrc_tree_mutex);
+	qpn_ptr = tsearch(&qp->qp_num, &ibv_xrc_qp_tree, xrc_qp_compare);
+	if (!qpn_ptr)
+		ret = EINVAL;
+
+	pthread_mutex_unlock(&xrc_tree_mutex);
+	return ret;
+
+}
+
+LATEST_SYMVER_FUNC(ibv_open_xrc_domain, 1_5, "IBVERBS_1.5",
+		   struct ibv_xrc_domain *,
+		   struct ibv_context *context,
+		   int fd,
+		   int oflag)
 {
 
 	struct ibv_xrcd *ibv_xrcd;
@@ -1095,11 +1168,21 @@ struct ibv_xrc_domain *ibv_open_xrc_domain(struct ibv_context *context,
 
 }
 
+LATEST_SYMVER_FUNC(ibv_close_xrc_domain, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_xrc_domain *d)
+{
+	struct ibv_xrcd *ibv_xrcd = (struct ibv_xrcd *)d;
 
-struct ibv_srq *ibv_create_xrc_srq(struct ibv_pd *pd,
-				   struct ibv_xrc_domain *xrc_domain,
-				   struct ibv_cq *xrc_cq,
-				   struct ibv_srq_init_attr *srq_init_attr)
+	return ibv_close_xrcd(ibv_xrcd);
+}
+
+LATEST_SYMVER_FUNC(ibv_create_xrc_srq, 1_5, "IBVERBS_1.5",
+		   struct ibv_srq *,
+		   struct ibv_pd *pd,
+		   struct ibv_xrc_domain *xrc_domain,
+		   struct ibv_cq *xrc_cq,
+		   struct ibv_srq_init_attr *srq_init_attr)
 {
 	void (*drv_set_legacy_xrc)(struct ibv_srq *, void *);
 	struct ibv_srq_init_attr_ex ibv_srq_init_attr_ex;
@@ -1207,85 +1290,10 @@ err:
 	return NULL;
 }
 
-static pthread_mutex_t xrc_tree_mutex = PTHREAD_MUTEX_INITIALIZER;
-static void *ibv_xrc_qp_tree;
-
-static int xrc_qp_compare(const void *a, const void *b)
-{
-
-	if ((*(uint32_t *) a) < (*(uint32_t *) b))
-		return -1;
-	else if ((*(uint32_t *) a) > (*(uint32_t *) b))
-		return 1;
-	else
-		return 0;
-}
-
-struct ibv_qp *ibv_find_xrc_qp(uint32_t qpn)
-{
-	uint32_t **qpn_ptr;
-	struct ibv_qp *ibv_qp = NULL;
-
-	pthread_mutex_lock(&xrc_tree_mutex);
-	qpn_ptr = tfind(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
-	if (!qpn_ptr)
-		goto end;
-
-	ibv_qp = container_of(*qpn_ptr, struct ibv_qp, qp_num);
-
-end:
-	pthread_mutex_unlock(&xrc_tree_mutex);
-	return ibv_qp;
-}
-
-static int ibv_clear_xrc_qp(uint32_t qpn)
-{
-	uint32_t **qpn_ptr;
-	int ret = 0;
-
-	pthread_mutex_lock(&xrc_tree_mutex);
-	qpn_ptr = tdelete(&qpn, &ibv_xrc_qp_tree, xrc_qp_compare);
-	if (!qpn_ptr)
-		ret = EINVAL;
-
-	pthread_mutex_unlock(&xrc_tree_mutex);
-	return ret;
-}
-
-static int ibv_store_xrc_qp(struct ibv_qp *qp)
-{
-	uint32_t **qpn_ptr;
-	int ret = 0;
-
-	if (ibv_find_xrc_qp(qp->qp_num)) {
-		/*
-		 * Set an error in case qpn alreday exists, not expected
-		 * to happen.
-		 */
-		fprintf(stderr, PFX "ibv_store_xrc_qp failed, qpn=%u is already stored\n",
-			qp->qp_num);
-		return EEXIST;
-	}
-
-	pthread_mutex_lock(&xrc_tree_mutex);
-	qpn_ptr = tsearch(&qp->qp_num, &ibv_xrc_qp_tree, xrc_qp_compare);
-	if (!qpn_ptr)
-		ret = EINVAL;
-
-	pthread_mutex_unlock(&xrc_tree_mutex);
-	return ret;
-
-}
-
-int ibv_close_xrc_domain(struct ibv_xrc_domain *d)
-{
-	struct ibv_xrcd *ibv_xrcd = (struct ibv_xrcd *)d;
-
-	return ibv_close_xrcd(ibv_xrcd);
-}
-
-int ibv_create_xrc_rcv_qp(struct ibv_qp_init_attr *init_attr,
-			  uint32_t *xrc_rcv_qpn)
+LATEST_SYMVER_FUNC(ibv_create_xrc_rcv_qp, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_qp_init_attr *init_attr,
+		   uint32_t *xrc_rcv_qpn)
 {
 	struct ibv_xrcd *ibv_xrcd;
 	struct ibv_qp_init_attr_ex qp_init_attr_ex;
@@ -1322,9 +1330,12 @@ int ibv_create_xrc_rcv_qp(struct ibv_qp_init_attr *init_attr,
 }
 
 
-int ibv_modify_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
-			  uint32_t xrc_qp_num,
-			  struct ibv_qp_attr *attr, int attr_mask)
+LATEST_SYMVER_FUNC(ibv_modify_xrc_rcv_qp, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_xrc_domain *xrc_domain,
+		   uint32_t xrc_qp_num,
+		   struct ibv_qp_attr *attr,
+		   int attr_mask)
 {
 	struct ibv_qp *qp;
 
@@ -1337,9 +1348,12 @@ int ibv_modify_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
 
 }
 
-int ibv_query_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num,
-			 struct ibv_qp_attr *attr, int attr_mask,
-			 struct ibv_qp_init_attr *init_attr)
+LATEST_SYMVER_FUNC(ibv_query_xrc_rcv_qp, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_xrc_domain *xrc_domain,
+		   uint32_t xrc_qp_num,
+		   struct ibv_qp_attr *attr, int attr_mask,
+		   struct ibv_qp_init_attr *init_attr)
 {
 	struct ibv_qp *qp;
 
@@ -1351,7 +1365,11 @@ int ibv_query_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num,
 	return ibv_query_qp(qp, attr, attr_mask, init_attr);
 
 }
-int ibv_reg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num)
+
+LATEST_SYMVER_FUNC(ibv_reg_xrc_rcv_qp, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_xrc_domain *xrc_domain,
+		   uint32_t xrc_qp_num)
 {
 
 	struct ibv_qp *qp;
@@ -1392,8 +1410,10 @@ int ibv_reg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain, uint32_t xrc_qp_num)
 
 }
 
-int ibv_unreg_xrc_rcv_qp(struct ibv_xrc_domain *xrc_domain,
-			 uint32_t xrc_qp_num)
+LATEST_SYMVER_FUNC(ibv_unreg_xrc_rcv_qp, 1_5, "IBVERBS_1.5",
+		   int,
+		   struct ibv_xrc_domain *xrc_domain,
+		   uint32_t xrc_qp_num)
 {
 
 	struct ibv_qp *qp;
