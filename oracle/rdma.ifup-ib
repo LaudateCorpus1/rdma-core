@@ -71,28 +71,54 @@ if [ "${PKEY}" = yes ]; then
 		net_log $"InfiniBand IPoIB device: PKEY=yes requires a PHYSDEV"
 		exit 1
 	}
-	# Normalize our PKEY_ID to have the high bit set
+	# Normalize our PKEY_ID to have the high bit set AND in hex format
 	NEW_PKEY_ID=`printf "0x%04x" $(( 0x8000 | ${PKEY_ID} ))`
-	NEW_PKEY_NAME=`printf "%04x" ${NEW_PKEY_ID}`
-	[ "${DEVICE}" != "${PHYSDEV}.${NEW_PKEY_NAME}" ] && {
-		net_log $"Configured DEVICE name does not match what new device name would be.  This
-is most likely because once the PKEY_ID was normalized, it no longer
-resulted in the expected device naming, and so the DEVICE entry in the
-config file needs to be updated to match. This can also be caused by
+	if [ $? -ne 0 ] || [ -z "${NEW_PKEY_ID}" ]; then
+		net_log $"Calculated PKEY_ID is invalid. This can sometimes be caused by
 giving PKEY_ID as a hex number but without using the mandatory 0x prefix.
-	Configured DEVICE=$DEVICE
-	Configured PHYSDEV=$PHYSDEV
-	Configured PKEY_ID=$PKEY_ID
-	Calculated PKEY_ID=$NEW_PKEY_ID
-	Calculated name=${PHYSDEV}.${NEW_PKEY_NAME}"
+	Configured DEVICE=${DEVICE}
+	Configured PHYSDEV=${PHYSDEV}
+	Configured PKEY_ID=${PKEY_ID}
+	Calculated PKEY_ID=${NEW_PKEY_ID}"
+		exit 1
+	fi
+	NEW_PKEY_NAME=`printf "%04x" ${NEW_PKEY_ID}`
+	if [ $? -ne 0 ] || [ -z "${NEW_PKEY_NAME}" ] || [ ${#NEW_PKEY_NAME} -ne 4 ]; then
+		net_log $"Calculated PKEY_ID is invalid. This can sometimes be caused by
+giving PKEY_ID as a hex number but without using the mandatory 0x prefix or using value out of range.
+	Configured DEVICE=${DEVICE}
+	Configured PHYSDEV=${PHYSDEV}
+	Configured PKEY_ID=${PKEY_ID}
+	Calculated PKEY_ID=${NEW_PKEY_ID}"
+		exit 1
+	fi
+
+	if [ "${DEVICE}" == "${PHYSDEV}.${NEW_PKEY_NAME}" ]; then
+		[ ! -e "/sys/class/net/${PHYSDEV}/create_child" ] && {
+			echo "Device ${PHYSDEV} does not support create_child interface!"
+			echo "Failed to create child device with pkey ${NEW_PKEY_ID} of ${PHYSDEV}"
 		exit 1
 	}
 	[ -d "/sys/class/net/${DEVICE}" ] ||
 		echo "${NEW_PKEY_ID}" > "/sys/class/net/${PHYSDEV}/create_child"
 	[ -d "/sys/class/net/${DEVICE}" ] || {
-		echo "Failed to create child device $NEW_PKEY_ID of $PHYSDEV"
+			echo "Failed to create child device with pkey ${NEW_PKEY_ID} of ${PHYSDEV}"
 		exit 1
 	}
+	else
+		[ ! -e "/sys/class/net/${PHYSDEV}/create_named_child" ] && {
+			echo "Device ${PHYSDEV} does not support create_named_child interface!"
+			echo "Failed to create child device named ${DEVICE} pkey ${NEW_PKEY_ID} of ${PHYSDEV}"
+			exit 1
+		}
+		[ -d "/sys/class/net/${DEVICE}" ] ||
+			echo "${DEVICE} ${NEW_PKEY_ID}" > "/sys/class/net/${PHYSDEV}/create_named_child"
+		[ -d "/sys/class/net/${DEVICE}" ] || {
+			echo "Failed to create child device named ${DEVICE} pkey ${NEW_PKEY_ID} of ${PHYSDEV}"
+			exit 1
+		}
+	fi
+
 	# When we get to setting up the IP address, we need REALDEVICE to
 	# point to our new PKEY device
 	REALDEVICE="${DEVICE}"
