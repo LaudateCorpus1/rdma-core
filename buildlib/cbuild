@@ -146,6 +146,38 @@ class fc28(Environment):
             " ".join(sorted(self.pkgs))));
         return res;
 
+class oraclelinux7(YumEnvironment):
+    docker_parent = "oraclelinux:7-slim";
+    pkgs = centos7.pkgs;
+    name = "oraclelinux7";
+    use_make = True;
+    pandoc = False;
+    build_pyverbs = False;
+    specfile = "redhat/rdma-core.spec";
+    python_cmd = "python";
+
+    def get_docker_file(self):
+        res = YumEnvironment.get_docker_file(self);
+        res.lines.insert(1,"RUN yum-config-manager --enable ol7_optional_latest");
+        return res;
+
+class oraclelinux7_ora(YumEnvironment):
+    docker_parent = "oraclelinux:7-slim";
+    pkgs = (centos7.pkgs - {"make"}) | {"cmake","ninja-build","pandoc"};
+    name = "oraclelinux7_ora";
+    specfile = "oracle/rdma-core.spec";
+    use_make = False;
+    pandoc = True;
+    build_pyverbs = False;
+    ninja_cmd = "ninja-build";
+    is_rpm = True;
+    aliases ={"ol7ora"};
+
+    def get_docker_file(self):
+        res = YumEnvironment.get_docker_file(self);
+        res.lines.insert(1,"RUN yum-config-manager --enable ol7_optional_latest");
+        return res;
+
 # -------------------------------------------------------------------------
 
 class APTEnvironment(Environment):
@@ -363,6 +395,8 @@ environments = [centos6(),
                 jessie(),
                 stretch(),
                 fc28(),
+                oraclelinux7(),
+                oraclelinux7_ora(),
                 leap(),
                 tumbleweed(),
                 debian_experimental(),
