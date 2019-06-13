@@ -8,6 +8,10 @@
 %define dma_coherent 1
 %endif
 
+# Orabug: 29839092 - To produce unstripped binaries for Exadata we disable the
+# creation of the -debuginfo package.
+%define debug_package %{nil}
+
 %define         git_hash %{nil}
 Name:           rdma-core
 Epoch:          %{uek5epoch}
@@ -609,6 +613,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Thu Jun 13 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2
+- oracle/spec: Do not strip debug info from binaries (Aron Silverton) [Orabug: 29839092]
+
 * Thu May 02 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.3
 - libibverbs: shpd_pingpong.c ought to be WITHOUT_ORACLE_EXTENSIONS aware (Mark Haywood) [Orabug: 29437535]
 - libibverbs: convert SHPD struct fields from __u64 to __aligned_64 (Mark Haywood) [Orabug: 29460706]
