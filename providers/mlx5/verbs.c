@@ -1974,7 +1974,7 @@ static struct ibv_qp *create_qp(struct ibv_context *context,
 	cmd.rq_wqe_count = qp->rq.wqe_cnt;
 	cmd.rq_wqe_shift = qp->rq.wqe_shift;
 
-	if (ctx->atomic_cap == IBV_ATOMIC_HCA)
+	if (ctx->atomic_cap)
 		qp->atomics_enabled = 1;
 
 	if (!ctx->cqe_version) {
