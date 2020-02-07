@@ -37,7 +37,11 @@ BuildRequires:  pkgconfig(libsystemd)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(systemd)
 BuildRequires:  pkgconfig(udev)
-BuildRequires:  python
+%if 0%{?rhel} >= 8
+BuildRequires: python3
+%else
+BuildRequires: python
+%endif
 BuildRequires:  sed
 %ifnarch s390 S390x
 BuildRequires:  valgrind-devel
@@ -613,6 +617,9 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Fri Feb 07 2020 Aron Silverton <aron.silverton@oracle.com> - 5:20.2
+- oracle/spec: Use python3 when building for OL8 (Aron Silverton) [Orabug: 30871216]
+
 * Thu Jun 13 2019 Aron Silverton <aron.silverton@oracle.com> - 5:20.2-1.0.4
 - oracle/spec: Do not strip debug info from binaries (Aron Silverton) [Orabug: 29839092]
 
