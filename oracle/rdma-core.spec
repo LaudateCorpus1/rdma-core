@@ -16,7 +16,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1.0.5%{?dist}%{?flavor}
+Release:        1.0.6%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -617,6 +617,14 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Tue Mar 10 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.6
+- ibacm: Fix bug in acm_get_ep() (Mark Haywood) [Orabug: 29582724]
+- ibacm: Allocate end-point addresses dynamically (Mark Haywood) [Orabug: 29582724]
+- ibacm: Allocate end-point addresses dynamically in provider (Mark Haywood) [Orabug: 29582724]
+- ibacm: Update documentation (Mark Haywood) [Orabug: 29582724]
+- ibacm: Remove trailing blanks (Mark Haywood) [Orabug: 29582724]
+- ibacm: fix a RESOURCE_LEAK issue for acmp.c (Mark Haywood) [Orabug: 29582724]
+
 * Fri Feb 07 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.5
 - oracle/spec: Use python3 when building for OL8 (Aron Silverton) [Orabug: 30871216]
 
