@@ -96,19 +96,22 @@ static int rxe_query_port(struct ibv_context *context, uint8_t port,
 static struct ibv_pd *rxe_alloc_pd(struct ibv_context *context)
 {
 	struct ibv_alloc_pd cmd;
-	struct ib_uverbs_alloc_pd_resp resp;
-	struct ibv_pd *pd;
+	struct rxe_alloc_pd_resp resp;
+	struct rxe_pd *pd;
 
 	pd = malloc(sizeof *pd);
 	if (!pd)
 		return NULL;
 
-	if (ibv_cmd_alloc_pd(context, pd, &cmd, sizeof cmd, &resp, sizeof resp)) {
+	if (ibv_cmd_alloc_pd(context, &pd->ibv_pd, &cmd, sizeof(cmd),
+			    &resp.ibv_resp, sizeof(resp))) {
 		free(pd);
 		return NULL;
 	}
 
-	return pd;
+	pd->pdn = resp.pdn;
+
+	return &pd->ibv_pd;
 }
 
 static int rxe_dealloc_pd(struct ibv_pd *pd)
@@ -117,10 +120,50 @@ static int rxe_dealloc_pd(struct ibv_pd *pd)
 
 	ret = ibv_cmd_dealloc_pd(pd);
 	if (!ret)
-		free(pd);
+		free(to_rpd(pd));
 
 	return ret;
 }
+
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+
+static struct ibv_shpd *rxe_alloc_shpd(struct ibv_pd *pd, uint64_t share_key,
+				      struct ibv_shpd *shpd)
+{
+	struct ibv_alloc_shpd cmd;
+	struct ib_uverbs_alloc_shpd_resp resp;
+
+	if (ibv_cmd_alloc_shpd(pd->context, pd, share_key, shpd, &cmd,
+			       sizeof(cmd), &resp, sizeof(resp))) {
+		return NULL;
+	}
+
+	return shpd;
+}
+
+static struct ibv_pd *rxe_share_pd(struct ibv_context *context,
+				   struct ibv_shpd *shpd, uint64_t share_key)
+{
+	struct ibv_share_pd		cmd;
+	struct rxe_share_pd_resp	resp;
+	struct rxe_pd			*pd;
+
+	pd = malloc(sizeof(*pd));
+	if (!pd)
+		return NULL;
+
+	if (ibv_cmd_share_pd(context, shpd, share_key, &pd->ibv_pd, &cmd,
+			     sizeof(cmd), &resp.ibv_resp, sizeof(resp))) {
+		free(pd);
+		return NULL;
+	}
+
+	pd->pdn = resp.pdn;
+
+	return &pd->ibv_pd;
+}
+
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 static struct ibv_mr *rxe_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
 				 int access)
@@ -830,6 +873,10 @@ static const struct verbs_context_ops rxe_ctx_ops = {
 	.query_port = rxe_query_port,
 	.alloc_pd = rxe_alloc_pd,
 	.dealloc_pd = rxe_dealloc_pd,
+#ifndef	WITHOUT_ORACLE_EXTENSIONS
+	.alloc_shpd = rxe_alloc_shpd,
+	.share_pd = rxe_share_pd,
+#endif	/* !WITHOUT_ORACLE_EXTENSIONS */
 	.reg_mr = rxe_reg_mr,
 	.dereg_mr = rxe_dereg_mr,
 	.create_cq = rxe_create_cq,

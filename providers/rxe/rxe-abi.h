@@ -49,5 +49,11 @@ DECLARE_DRV_CMD(urxe_modify_srq, IB_USER_VERBS_CMD_MODIFY_SRQ,
 		rxe_modify_srq_cmd, empty);
 DECLARE_DRV_CMD(urxe_resize_cq, IB_USER_VERBS_CMD_RESIZE_CQ,
 		empty, rxe_resize_cq_resp);
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+DECLARE_DRV_CMD(rxe_alloc_pd, IB_USER_VERBS_CMD_ALLOC_PD,
+		empty, rxe_ib_alloc_pd_resp);
+DECLARE_DRV_CMD(rxe_share_pd, IB_USER_VERBS_CMD_SHARE_PD,
+		empty, rxe_ib_share_pd_resp);
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
 
 #endif /* RXE_ABI_H */

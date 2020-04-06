@@ -175,4 +175,16 @@ struct rxe_modify_srq_cmd {
 	__aligned_u64 mmap_info_addr;
 };
 
+#ifndef WITHOUT_ORACLE_EXTENSIONS
+struct rxe_ib_alloc_pd_resp {
+	__u32   pdn;
+	__u32   reserved;
+};
+
+struct rxe_ib_share_pd_resp {
+	__u32   pdn;
+	__u32   reserved;
+};
+#endif /* !WITHOUT_ORACLE_EXTENSIONS */
+
 #endif /* RDMA_USER_RXE_H */

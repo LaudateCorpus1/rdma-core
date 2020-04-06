@@ -94,6 +94,12 @@ struct rxe_srq {
 	uint32_t		srq_num;
 };
 
+struct rxe_pd {
+	struct ibv_pd                   ibv_pd;
+	struct rxe_pd			*rxepd;
+	uint32_t                        pdn;
+};
+
 #define to_rxxx(xxx, type) container_of(ib##xxx, struct rxe_##type, ibv_##xxx)
 
 static inline struct rxe_context *to_rctx(struct ibv_context *ibctx)
@@ -125,5 +131,11 @@ static inline struct rxe_ah *to_rah(struct ibv_ah *ibah)
 {
 	return to_rxxx(ah, ah);
 }
+
+static inline struct rxe_pd *to_rpd(struct ibv_pd *ibpd)
+{
+	return to_rxxx(pd, pd);
+}
+
 
 #endif /* RXE_H */
