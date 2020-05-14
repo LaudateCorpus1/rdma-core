@@ -16,7 +16,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1.0.6%{?dist}%{?flavor}
+Release:        1.0.7%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -617,6 +617,21 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Thu May 14 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.7
+- rxe: Enhance Soft RoCE to support Shared PD (Rao Shoaib) [Orabug: 31086119]
+- mlx5: Add new device IDs (Mark Haywood) [Orabug: 31219305]
+- ibacm: only open InfiniBand port (Mark Haywood) [Orabug: 31219526]
+- srp_daemon: fix a double free segment fault for ibsrpdm (Mark Haywood) [Orabug: 31331838]
+- man: Fix return value for ibv_reg_dm_mr (Mark Haywood) [Orabug: 31331819]
+- mlx5: Support atomic operations when device reports IBV_ATOMIC_GLOB (Mark Haywood) [Orabug: 31045202]
+- ibacm: Fix a memory leak in an acm_open_dev() error path (Mark Haywood) [Orabug: 31219526]
+- ibacm: Do not open non InfiniBand device (Mark Haywood) [Orabug: 31219526]
+- rcopy: fix UNUSED_VALUE (Mark Haywood) [Orabug: 31331960]
+- srp_daemon: check return value of function 'umad_init' (Mark Haywood) [Orabug: 31331930]
+- rstream.c: fix RESOURCE_LEAK issues (Mark Haywood) [Orabug: 31331910]
+- ibacm: Fix id_string pointers after end-point address re-allocation (Mark Haywood) [Orabug: 31046358]
+- ibacm: check provider file ends with .so extension (Mark Haywood) [Orabug: 31048252]
+
 * Tue Mar 10 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.6
 - ibacm: Fix bug in acm_get_ep() (Mark Haywood) [Orabug: 29582724]
 - ibacm: Allocate end-point addresses dynamically (Mark Haywood) [Orabug: 29582724]
