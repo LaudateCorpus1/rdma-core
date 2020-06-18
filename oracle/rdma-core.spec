@@ -389,6 +389,13 @@ install -D -m0644 oracle/sysctl.rds-conf %{buildroot}%{_sysconfdir}/sysctl.d/90-
 
 # END Oracle Virtual OS (VOS) configuration
 
+# Remove unsupported systemd options from srp_daemon service configuration files for OL7
+%if 0%{?rhel} == 7
+%define _delete_systemd_opts '/^MemoryDenyWriteExecute=\\|^ProtectControlGroups=\\|^ProtectKernelModules=\\|^RestrictRealtime=/d'
+sed -i -e %{_delete_systemd_opts} %{buildroot}%{_unitdir}/srp_daemon.service
+sed -i -e %{_delete_systemd_opts} %{buildroot}%{_unitdir}/srp_daemon_port@.service
+%endif
+
 # ibacm
 bin/ib_acme -D . -O
 # multi-lib conflict resolution hacks (bug 1429362)
