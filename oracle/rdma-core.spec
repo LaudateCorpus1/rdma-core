@@ -16,7 +16,7 @@
 Name:           rdma-core
 Epoch:          %{uek5epoch}
 Version:        20.2
-Release:        1.0.7%{?dist}%{?flavor}
+Release:        1.0.8%{?dist}%{?flavor}
 Summary:        RDMA core userspace libraries and daemons (Oracle Extensions)
 License:        GPL-2.0 or BSD-2-Clause
 
@@ -624,6 +624,18 @@ rm -f %{buildroot}/%{_sbindir}/srp_daemon.sh
 %doc %{_docdir}/%{name}-%{version}/ibsrpdm.md
 
 %changelog
+* Thu Aug 13 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.8
+- srp_daemon.service: systemd Unknown lvalue messages in /var/log/messages (Mark Haywood) [Orabug: 31377510]
+- srp_daemon: Print the correct device name for error (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: improve the debug message for is_enabled_by_rules_file (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: check that port LID is valid before calling create_ah (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: Print maximum initiator to target IU size (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: Use maximum initiator to target IU size (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: Move man page from section 1 to section 8 (Mark Haywood) [Orabug: 31753843]
+- srp_daemon: Move ibsrpdm man page from section 1 to 8 (Mark Haywood) [Orabug: 31753843]
+- oracle/spec: Move srp_daemon man page from section 1 to section 8 (Mark Haywood) [Orabug: 31753843]
+- oracle/spec: Move ibsprdm man page from section 1 to section 8 (Mark Haywood) [Orabug: 31753843]
+
 * Thu May 14 2020 Mark Haywood <mark.haywood@oracle.com> - 5:20.2-1.0.7
 - rxe: Enhance Soft RoCE to support Shared PD (Rao Shoaib) [Orabug: 31086119]
 - mlx5: Add new device IDs (Mark Haywood) [Orabug: 31219305]
